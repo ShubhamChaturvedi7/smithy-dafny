@@ -10,9 +10,7 @@ import (
 )
 
 func GetUnionInput_ToDafny(nativeInput simpleuniontypes.GetUnionInput) simpleunioninternaldafnytypes.GetUnionInput {
-
 	return func() simpleunioninternaldafnytypes.GetUnionInput {
-
 		return simpleunioninternaldafnytypes.Companion_GetUnionInput_.Create_GetUnionInput_(func() Wrappers.Option {
 				return Wrappers.Companion_Option_.Create_Some_(dafny.SeqOfChars([]dafny.Char("*nativeInput")...))
 			}())
@@ -21,9 +19,8 @@ func GetUnionInput_ToDafny(nativeInput simpleuniontypes.GetUnionInput) simpleuni
 }
 
 func GetUnionOutput_ToDafny(nativeOutput simpleuniontypes.GetUnionOutput) simpleunioninternaldafnytypes.GetUnionOutput {
-
+	
 	return func() simpleunioninternaldafnytypes.GetUnionOutput {
-
 		return simpleunioninternaldafnytypes.Companion_GetUnionOutput_.Create_GetUnionOutput_(func() Wrappers.Option {
 				return Wrappers.Companion_Option_.Create_Some_(dafny.SeqOfChars([]dafny.Char("*nativeInput")...))
 			}())

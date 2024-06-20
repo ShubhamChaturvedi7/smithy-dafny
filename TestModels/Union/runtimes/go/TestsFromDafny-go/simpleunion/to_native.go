@@ -6,15 +6,30 @@ import (
 	"github.com/Smithy-dafny/TestModels/Union/simpleunioninternaldafnytypes"
 	"github.com/Smithy-dafny/TestModels/Union/simpleuniontypes"
 	"github.com/dafny-lang/DafnyRuntimeGo/dafny"
+	"fmt"
+	// "reflect"
 )
 
-func GetUnionInput_FromDafny(dafnyInput simpleunioninternaldafnytypes.GetUnionInput) simpleuniontypes.GetUnionInput {
+func DeferredPanicHandler() {
+    if r := recover(); r != nil {
+        fmt.Println("Recovered from panic:", r)
+    }
+}
 
-	return simpleuniontypes.GetUnionInput{Union: func() simpleuniontypes.MyUnion {
-		var union simpleuniontypes.MyUnion
+func GetUnionInput_FromDafny(dafnyInput simpleunioninternaldafnytypes.GetUnionInput) simpleuniontypes.GetUnionInput {
+	defer DeferredPanicHandler()
+	var union simpleuniontypes.MyUnion
+	if(((dafnyInput.Dtor_union()).Dtor_value().(simpleunioninternaldafnytypes.MyUnion)).Is_IntegerValue()) {
 		union = &simpleuniontypes.MyUnionMemberIntegerValue{
-			Value: dafnyInput.Dtor_union().UnwrapOr(nil).(int32),
+			Value: (dafnyInput.Dtor_union().UnwrapOr(nil).(simpleunioninternaldafnytypes.MyUnion)).Dtor_IntegerValue(),
 		}
+	}
+	if(((dafnyInput.Dtor_union()).Dtor_value().(simpleunioninternaldafnytypes.MyUnion)).Is_StringValue()) {
+		union = &simpleuniontypes.MyUnionMemberIntegerValue{
+			Value: (dafnyInput.Dtor_union().UnwrapOr(nil).(simpleunioninternaldafnytypes.MyUnion)).Dtor_IntegerValue(),
+		}
+	}
+	return simpleuniontypes.GetUnionInput{Union: func() simpleuniontypes.MyUnion {
 		return union
 	}()}
 
