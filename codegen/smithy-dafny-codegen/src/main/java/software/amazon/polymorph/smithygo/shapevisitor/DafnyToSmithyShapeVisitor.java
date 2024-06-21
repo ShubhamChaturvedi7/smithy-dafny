@@ -355,17 +355,12 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
     @Override
     public String unionShape(UnionShape shape) {
         writer.addImportFromModule("github.com/dafny-lang/DafnyRuntimeGo", "dafny");
+        System.out.println(context.symbolProvider().toSymbol(shape));
         return """
-            func () types.%s {
-                var union types.%s
-                union = &types.MyUnionMemberIntegerValue{
-                    Value: %s.(int32),
-                }
-                return union
+            var union %s
             }()""".formatted(
-                shape.toShapeId().getName(),
-                shape.toShapeId().getName(),
-                dataSource);
+                context.symbolProvider().toSymbol(shape),
+                );
     }
 
     @Override
