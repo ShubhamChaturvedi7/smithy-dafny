@@ -369,9 +369,33 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
         for (var member : shape.getAllMembers().values()) {
             Shape targetShape = context.model().expectShape(member.getTarget());
             String memberName = context.symbolProvider().toMemberName(member);
-            System.out.println(memberName);
-            System.out.println(DafnyNameResolver.getDafnyType(targetShape, context.symbolProvider().toSymbol(shape)));
+            // System.out.println(memberName.replace(shape.getId().getName() + "Member", "Is_"));
+            // System.out.println(memberName);
+            // System.out.println(SmithyNameResolver.smithyTypesNamespace(shape));
+
+            returnString += """
+                if (((dafnyInput.Dtor_union()).Dtor_value().(%s).%s) {
+                    union = &%s.%s{
+                        Value: (%s.(%s)).Dtor_%s()
+                    }
+                }
+                """.formatted(
+                    DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape)),
+                    memberName.replace(shape.getId().getName() + "Member", "Is_"),
+                    SmithyNameResolver.smithyTypesNamespace(shape),
+                    memberName,
+                    dataSource,
+                    DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape)),
+                    memberName.replace(shape.getId().getName() + "Member", "")
+                );
         }
+        System.out.println(shape);
+
+        // returnString += """
+        //         return %s 
+        //     """;
+        
+        //System.out.println(SmithyNameResolver.getSmithyType(shape, context.symbolProvider().toSymbol(shape)));
         return returnString;
     }
 
