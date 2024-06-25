@@ -357,15 +357,18 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
         writer.addImportFromModule("github.com/dafny-lang/DafnyRuntimeGo", "dafny");
 
         String returnString = """
+                func() %s {
+                """.formatted(context.symbolProvider().toSymbol(shape));
+        returnString += """
                     if %s == nil {
                         return nil
                     }
                     var union %s
                 """.formatted(
                     dataSource,
-                    context.symbolProvider().toSymbol(shape).getName()
+                    context.symbolProvider().toSymbol(shape)
                 );
-        
+        System.out.println(returnString);
         for (var member : shape.getAllMembers().values()) {
             Shape targetShape = context.model().expectShape(member.getTarget());
             String memberName = context.symbolProvider().toMemberName(member);
@@ -374,9 +377,9 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
             // System.out.println(SmithyNameResolver.smithyTypesNamespace(shape));
 
             returnString += """
-                if (((dafnyInput.Dtor_union()).Dtor_value().(%s).%s) {
+                if (((dafnyInput.Dtor_union()).Dtor_value().(%s)).%s()) {
                     union = &%s.%s{
-                        Value: (%s.(%s)).Dtor_%s()
+                        Value: (%s.(%s)).Dtor_%s(),
                     }
                 }
                 """.formatted(
@@ -389,11 +392,26 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                     memberName.replace(shape.getId().getName() + "Member", "")
                 );
         }
-        System.out.println(shape);
 
+        returnString += """
+            return union
+            }()""";
+        // String returnType = "";
+        // for(Shape shapeFromModel : context.model().toSet()) {
+        //     if(shapeFromModel instanceof StructureShape) {
+        //         StructureShape structureShape = (StructureShape) shapeFromModel;
+
+        //         if(structureShape.getAllMembers().values().stream().anyMatch(member -> member.getTarget().equals(shape.getId()))) {
+        //             returnType = context.symbolProvider().toSymbol(structureShape).toString();
+        //         }
+        //     }
+        // }
         // returnString += """
-        //         return %s 
-        //     """;
+        //         return %s {union: func() %s { return union} }
+        //     """.formatted(
+        //         returnType,
+        //         context.symbolProvider().toSymbol(shape).getName()
+        //     );
         
         //System.out.println(SmithyNameResolver.getSmithyType(shape, context.symbolProvider().toSymbol(shape)));
         return returnString;
