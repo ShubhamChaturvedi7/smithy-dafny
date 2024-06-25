@@ -368,52 +368,134 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                     dataSource,
                     context.symbolProvider().toSymbol(shape)
                 );
-        System.out.println(returnString);
         for (var member : shape.getAllMembers().values()) {
             Shape targetShape = context.model().expectShape(member.getTarget());
             String memberName = context.symbolProvider().toMemberName(member);
-            // System.out.println(memberName.replace(shape.getId().getName() + "Member", "Is_"));
-            // System.out.println(memberName);
-            // System.out.println(SmithyNameResolver.smithyTypesNamespace(shape));
-
+            String rawUnionDataSource = "(" + dataSource + ".(" + DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape)) + "))";
+            String unionDataSource = rawUnionDataSource + ".Dtor_" + memberName.replace(shape.getId().getName() + "Member", "") + "()";
             returnString += """
-                if (((dafnyInput.Dtor_union()).Dtor_value().(%s)).%s()) {
-                    union = &%s.%s{
-                        Value: (%s.(%s)).Dtor_%s(),
-                    }
-                }
-                """.formatted(
-                    DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape)),
-                    memberName.replace(shape.getId().getName() + "Member", "Is_"),
-                    SmithyNameResolver.smithyTypesNamespace(shape),
-                    memberName,
-                    dataSource,
-                    DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape)),
-                    memberName.replace(shape.getId().getName() + "Member", "")
-                );
+                        if ((%s).%s()) {
+                    """.formatted(
+                        rawUnionDataSource,
+                        memberName.replace(shape.getId().getName() + "Member", "Is_")
+                        );
+
+            if (targetShape.isBlobShape()){
+                returnString += """
+                            var b []byte
+                            for i := dafny.Iterate(%s) ; ; {
+                                val, ok := i()
+                                if !ok {
+                                    union = &%s.%s{
+                                        Value: b,
+                                    }
+                                    break
+                                } else {
+                                    b = append(b, val.(byte))
+                                }
+                            }
+                            
+                        }
+                        """.formatted(
+                            unionDataSource,
+                            SmithyNameResolver.smithyTypesNamespace(shape),
+                            memberName);
+            }
+
+            else if (targetShape.isStringShape()){
+                var underlyingType = targetShape.hasTrait(DafnyUtf8BytesTrait.class) ? "uint8" : "dafny.Char";
+                returnString += """
+                            var s string
+                            for i := dafny.Iterate(%s) ; ; {
+                                val, ok := i()
+                                if !ok {
+                                    union = &%s.%s{
+                                        Value: []string{s}[0],
+                                    }
+                                    break
+                                } else {
+                                    s = s + string(val.(%s))
+                                }
+                            }
+                        }
+                        """.formatted(unionDataSource,
+                        SmithyNameResolver.smithyTypesNamespace(shape),
+                        memberName,
+                        underlyingType
+                        );
+            }
+
+            else if (targetShape.isIntegerShape() || targetShape.isDoubleShape() || targetShape.isLongShape() || targetShape.isBooleanShape()){
+                returnString += """
+                            union = &%s.%s{
+                                Value: %s,
+                            }
+                        }
+                        """.formatted(
+                        SmithyNameResolver.smithyTypesNamespace(shape),
+                        memberName,
+                        unionDataSource);
+            }
+
+            else if (targetShape.isListShape()){
+                final String typeName = targetShape.isStructureShape() ? context.symbolProvider().toSymbol(member).getFullName() : context.symbolProvider().toSymbol(member).getName();
+                returnString += """
+                            var fieldValue []%s
+                            for i := dafny.Iterate(%s); ;{
+                                val, ok := i()
+                                if !ok {
+                                    union = &%s.%s{
+                                        Value: fieldValue,
+                                    }
+                                    break
+                                }
+                            }
+                        }
+                        """.formatted(
+                            typeName,
+                            unionDataSource,
+                            SmithyNameResolver.smithyTypesNamespace(shape),
+                            memberName
+                            );
+            }
+
+            else if (targetShape.isMapShape()){
+                MapShape mapShape = targetShape.asMapShape().get();
+                MemberShape keyMemberShape = mapShape.getKey();
+                final Shape keyTargetShape = context.model().expectShape(keyMemberShape.getTarget());
+                MemberShape valueMemberShape = mapShape.getValue();
+                final Shape valueTargetShape = context.model().expectShape(valueMemberShape.getTarget());
+                final String typeName = targetShape.isStructureShape() ? context.symbolProvider().toSymbol(member).getFullName() : context.symbolProvider().toSymbol(member).getName();
+                returnString += """
+                            var m map[string]%s = make(map[string]%s)
+                            for i := dafny.Iterate(%s.Items());; {
+                                val, ok := i()
+                                if !ok {
+                                    union = &%s.%s{
+                                        Value: m,
+                                    }
+                                    break;
+                                }
+                                m[*%s] = *%s
+                            }
+                        }
+                        """.formatted(
+                            typeName, typeName,
+                            unionDataSource,
+                            keyTargetShape.accept(
+                                new DafnyToSmithyShapeVisitor(context, "(*val.(dafny.Tuple).IndexInt(0))", writer, isConfigShape)),
+                            valueTargetShape.accept(
+                                new DafnyToSmithyShapeVisitor(context, "(*val.(dafny.Tuple).IndexInt(1))", writer, isConfigShape)
+                            ),
+                            SmithyNameResolver.smithyTypesNamespace(shape),
+                            memberName
+                            );
+            }
         }
 
         returnString += """
             return union
             }()""";
-        // String returnType = "";
-        // for(Shape shapeFromModel : context.model().toSet()) {
-        //     if(shapeFromModel instanceof StructureShape) {
-        //         StructureShape structureShape = (StructureShape) shapeFromModel;
-
-        //         if(structureShape.getAllMembers().values().stream().anyMatch(member -> member.getTarget().equals(shape.getId()))) {
-        //             returnType = context.symbolProvider().toSymbol(structureShape).toString();
-        //         }
-        //     }
-        // }
-        // returnString += """
-        //         return %s {union: func() %s { return union} }
-        //     """.formatted(
-        //         returnType,
-        //         context.symbolProvider().toSymbol(shape).getName()
-        //     );
-        
-        //System.out.println(SmithyNameResolver.getSmithyType(shape, context.symbolProvider().toSymbol(shape)));
         return returnString;
     }
 
