@@ -163,6 +163,9 @@ public class GoPointableIndex implements KnowledgeIndex {
     }
 
     private boolean isMemberPointable(MemberShape member, Shape targetShape) {
+        if (member.hasTrait(RequiredTrait.class)) {
+            return false;
+        }
 
         // Streamed blob shapes are never pointers because they are interfaces
         if (isBlobStream(targetShape)) {
@@ -189,6 +192,10 @@ public class GoPointableIndex implements KnowledgeIndex {
     }
 
     private boolean isShapePointable(Shape shape) {
+        if (shape.hasTrait(RequiredTrait.class)) {
+            return false;
+        }
+        
         // All operation input and output shapes are pointable.
         if (isOperationStruct(shape)) {
             return true;
