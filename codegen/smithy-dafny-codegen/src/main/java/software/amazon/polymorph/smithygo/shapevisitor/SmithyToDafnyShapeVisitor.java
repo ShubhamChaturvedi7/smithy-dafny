@@ -1,5 +1,6 @@
 package software.amazon.polymorph.smithygo.shapevisitor;
 
+import java.lang.annotation.Target;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -465,7 +466,44 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
 
     @Override
     public String unionShape(UnionShape shape) {
-        return "Unionnnnnn";
+        writer.addImportFromModule("github.com/dafny-lang/DafnyRuntimeGo", "dafny");
+        String returnString = """
+            func() Wrappers.Option {
+                switch %s.(type) {""".formatted(dataSource);
+        for (var member : shape.getAllMembers().values()) {
+            Shape targetShape = context.model().expectShape(member.getTarget());
+            if(targetShape.isIntegerShape()){
+                returnString += """
+                                case *%s.%s:
+                                    return Wrappers.Companion_Option_.Create_Some_(%s.(*%s.%s).Value)
+                            """.formatted(
+                                SmithyNameResolver.smithyTypesNamespace(shape),
+                                context.symbolProvider().toMemberName(member),
+                                dataSource,
+                                SmithyNameResolver.smithyTypesNamespace(shape),
+                                context.symbolProvider().toMemberName(member)
+                            );
+            }
+            else if(targetShape.isStringShape()){
+                String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(%s)";
+                var underlyingType = "dafny.SeqOfChars([]dafny.Char((%s.(*%s.%s)).Value)...)".formatted(dataSource,SmithyNameResolver.smithyTypesNamespace(shape),context.symbolProvider().toMemberName(member));
+                returnString += """
+                                case *%s.%s:
+                                    return Wrappers.Companion_Option_.Create_Some_(%s)
+                            """.formatted(
+                                SmithyNameResolver.smithyTypesNamespace(shape),
+                                context.symbolProvider().toMemberName(member),
+                                someWrapIfRequired.formatted(underlyingType)
+                            );
+            }
+        }
+        returnString += """
+                        default:
+				            panic("unhandled union type")
+                    }
+                }()""";
+        System.out.println(returnString);
+        return returnString;
     }
 
     @Override
