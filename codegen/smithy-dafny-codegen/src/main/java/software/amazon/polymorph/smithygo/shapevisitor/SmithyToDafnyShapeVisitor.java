@@ -475,6 +475,39 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
             String memberName = context.symbolProvider().toMemberName(member);
             String createMemberFunction = memberName.replace(shape.getId().getName() + "Member", "Create_")+"_";
             Shape targetShape = context.model().expectShape(member.getTarget());
+            
+            // TODO: Map
+            // if(targetShape.isMapShape()){
+            //     MemberShape keyMemberShape = targetShape.asMapShape().get().getKey();
+            //     final Shape keyTargetShape = context.model().expectShape(keyMemberShape.getTarget());
+            //     MemberShape valueMemberShape = targetShape.asMapShape().get().getValue();
+            //     final Shape valueTargetShape = context.model().expectShape(valueMemberShape.getTarget());
+
+            //     String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(companion.%s(%s))";
+            //     returnString += """
+            //         case *%s.%s:
+            //             var companion = %s
+            //             fieldValue := dafny.NewMapBuilder()
+            //             for key, val := range %s.(*%s.%s).Value {
+            //                 fieldValue.Add(%s, %s)
+            //             }
+            //             return %s
+            //     """.formatted(
+            //         SmithyNameResolver.smithyTypesNamespace(shape),
+            //         context.symbolProvider().toMemberName(member),
+            //         internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
+            //         dataSource,
+            //         SmithyNameResolver.smithyTypesNamespace(shape),
+            //         context.symbolProvider().toMemberName(member),
+            //         keyTargetShape.accept(
+            //                 new SmithyToDafnyShapeVisitor(context, "key", writer, isConfigShape, false, false)),
+            //         valueTargetShape.accept(
+            //                 new SmithyToDafnyShapeVisitor(context, "val", writer, isConfigShape, false, false)),
+            //         someWrapIfRequired.formatted(createMemberFunction, "fieldValue.ToMap()")
+            //     );
+            // }
+            
+
             if(targetShape.isBlobShape()){
                 String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(companion.%s(%s))";
                 returnString += """
