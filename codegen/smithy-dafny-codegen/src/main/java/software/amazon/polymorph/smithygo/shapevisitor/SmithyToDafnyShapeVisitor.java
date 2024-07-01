@@ -466,34 +466,42 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
 
     @Override
     public String unionShape(UnionShape shape) {
+        String internalDafnyType = DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape));
         writer.addImportFromModule("github.com/dafny-lang/DafnyRuntimeGo", "dafny");
         String returnString = """
             func() Wrappers.Option {
                 switch %s.(type) {""".formatted(dataSource);
         for (var member : shape.getAllMembers().values()) {
+            String memberName = context.symbolProvider().toMemberName(member);
+            String createMemberFunction = memberName.replace(shape.getId().getName() + "Member", "Create_")+"_";
             Shape targetShape = context.model().expectShape(member.getTarget());
             if(targetShape.isIntegerShape()){
                 returnString += """
                                 case *%s.%s:
-                                    return Wrappers.Companion_Option_.Create_Some_(%s.(*%s.%s).Value)
+                                    var companion = %s
+                                    return Wrappers.Companion_Option_.Create_Some_(companion.%s(%s.(*%s.%s).Value))
                             """.formatted(
                                 SmithyNameResolver.smithyTypesNamespace(shape),
                                 context.symbolProvider().toMemberName(member),
+                                internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
+                                createMemberFunction,
                                 dataSource,
                                 SmithyNameResolver.smithyTypesNamespace(shape),
                                 context.symbolProvider().toMemberName(member)
                             );
             }
             else if(targetShape.isStringShape()){
-                String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(%s)";
                 var underlyingType = "dafny.SeqOfChars([]dafny.Char((%s.(*%s.%s)).Value)...)".formatted(dataSource,SmithyNameResolver.smithyTypesNamespace(shape),context.symbolProvider().toMemberName(member));
                 returnString += """
                                 case *%s.%s:
-                                    return Wrappers.Companion_Option_.Create_Some_(%s)
+                                    var companion = %s
+                                    return Wrappers.Companion_Option_.Create_Some_(companion.%s(%s))
                             """.formatted(
                                 SmithyNameResolver.smithyTypesNamespace(shape),
                                 context.symbolProvider().toMemberName(member),
-                                someWrapIfRequired.formatted(underlyingType)
+                                internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
+                                createMemberFunction,
+                                underlyingType
                             );
             }
         }
@@ -502,7 +510,6 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
 				            panic("unhandled union type")
                     }
                 }()""";
-        System.out.println(returnString);
         return returnString;
     }
 
