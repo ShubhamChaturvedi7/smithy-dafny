@@ -475,7 +475,27 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
             String memberName = context.symbolProvider().toMemberName(member);
             String createMemberFunction = memberName.replace(shape.getId().getName() + "Member", "Create_")+"_";
             Shape targetShape = context.model().expectShape(member.getTarget());
-            if(targetShape.isIntegerShape()){
+            if(targetShape.isBlobShape()){
+                String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(companion.%s(%s))";
+                returnString += """
+                    case *%s.%s:
+                    var companion = %s
+                    var v []interface{}
+                    for _, e := range %s.(*%s.%s).Value {
+                    	v = append(v, e)
+                    }
+                    return %s;
+                """.formatted(
+                    SmithyNameResolver.smithyTypesNamespace(shape),
+                    context.symbolProvider().toMemberName(member),
+                    internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
+                    dataSource,
+                    SmithyNameResolver.smithyTypesNamespace(shape),
+                    context.symbolProvider().toMemberName(member),
+                    someWrapIfRequired.formatted(createMemberFunction, "dafny.SeqOf(v...)")
+                );
+            }
+            if(targetShape.isIntegerShape() || targetShape.isBooleanShape()){
                 returnString += """
                                 case *%s.%s:
                                     var companion = %s
