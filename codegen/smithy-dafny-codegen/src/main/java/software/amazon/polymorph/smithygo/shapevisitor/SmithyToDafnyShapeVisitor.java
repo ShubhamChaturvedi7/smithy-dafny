@@ -528,7 +528,7 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
                     someWrapIfRequired.formatted(createMemberFunction, "dafny.SeqOf(v...)")
                 );
             }
-            if(targetShape.isIntegerShape() || targetShape.isBooleanShape()){
+            if(targetShape.isIntegerShape() || targetShape.isBooleanShape() || targetShape.isLongShape()){
                 returnString += """
                                 case *%s.%s:
                                     var companion = %s
@@ -542,6 +542,29 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
                                 SmithyNameResolver.smithyTypesNamespace(shape),
                                 context.symbolProvider().toMemberName(member)
                             );
+            }
+            if(targetShape.isDoubleShape()){
+                String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(companion.%s(%s))";
+                returnString += """
+                    case *%s.%s:
+                        var companion = %s
+                        var bits = math.Float64bits(%s.(*%s.%s).Value)
+                        var bytes = make([]byte, 8)
+                        binary.LittleEndian.PutUint64(bytes, bits)
+                        var v []interface{}
+                        for _, e := range bytes {
+                        v = append(v, e)
+                        }
+                        return %s;
+                        """.formatted(
+                            SmithyNameResolver.smithyTypesNamespace(shape),
+                            context.symbolProvider().toMemberName(member),
+                            internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
+                            dataSource,
+                            SmithyNameResolver.smithyTypesNamespace(shape),
+                            context.symbolProvider().toMemberName(member),
+                            someWrapIfRequired.formatted(createMemberFunction, "dafny.SeqOf(v...)")
+                        );
             }
             else if(targetShape.isStringShape()){
                 var underlyingType = "dafny.SeqOfChars([]dafny.Char((%s.(*%s.%s)).Value)...)".formatted(dataSource,SmithyNameResolver.smithyTypesNamespace(shape),context.symbolProvider().toMemberName(member));
