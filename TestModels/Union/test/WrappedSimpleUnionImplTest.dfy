@@ -13,6 +13,7 @@ module WrappedSimpleUnionTest {
         SimpleUnionImplTest.TestMyUnionString(client);
         SimpleUnionImplTest.TestMyUnionBoolean(client);
         SimpleUnionImplTest.TestMyUnionBlob(client);
+        SimpleUnionImplTest.TestMyUnionDouble(client);
         SimpleUnionImplTest.TestKnownValueUnionString(client);
 
     }

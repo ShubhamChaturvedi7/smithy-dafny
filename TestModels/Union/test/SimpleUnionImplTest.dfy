@@ -67,6 +67,24 @@ module SimpleUnionImplTest {
         expect ret.union.value.BooleanValue? == false;
         expect ret.union.value.IntegerValue? == false;
         expect ret.union.value.StringValue? == false;
+        expect ret.union.value.DoubleValue? == false;
+    }
+
+    method TestMyUnionDouble(client: ISimpleUnionClient)
+      requires client.ValidState()
+      modifies client.Modifies
+      ensures client.ValidState()
+    {
+        var s: seq<UInt.uint8> := [0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7];
+        var ret :- expect client.GetUnion(GetUnionInput(union := Some(DoubleValue(s))));
+
+        expect ret.union.Some?;
+        expect ret.union.value.DoubleValue?;
+        expect ret.union.value.DoubleValue == s;
+        expect ret.union.value.BlobValue? == false;
+        expect ret.union.value.BooleanValue? == false;
+        expect ret.union.value.IntegerValue? == false;
+        expect ret.union.value.StringValue? == false;
     }
 
     method TestKnownValueUnionString(client: ISimpleUnionClient)

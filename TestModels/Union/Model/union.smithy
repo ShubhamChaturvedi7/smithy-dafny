@@ -30,7 +30,8 @@ union MyUnion {
     IntegerValue: Integer,
     StringValue: String,
     BooleanValue: Boolean,
-    BlobValue: Blob
+    BlobValue: Blob,
+    DoubleValue: Double
 }
 
 operation GetKnownValueUnion {
