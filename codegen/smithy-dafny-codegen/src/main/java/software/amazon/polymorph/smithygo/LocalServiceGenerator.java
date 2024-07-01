@@ -11,22 +11,26 @@ import software.amazon.polymorph.smithygo.codegen.StructureGenerator;
 import software.amazon.polymorph.smithygo.codegen.UnionGenerator;
 import software.amazon.polymorph.smithygo.nameresolver.DafnyNameResolver;
 import software.amazon.polymorph.smithygo.nameresolver.SmithyNameResolver;
+import software.amazon.polymorph.traits.DafnyUtf8BytesTrait;
 import software.amazon.polymorph.traits.ExtendableTrait;
 import software.amazon.polymorph.traits.LocalServiceTrait;
 import software.amazon.polymorph.traits.ReferenceTrait;
 import software.amazon.smithy.codegen.core.SymbolProvider;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.knowledge.TopDownIndex;
+import software.amazon.smithy.model.shapes.MemberShape;
 import software.amazon.smithy.model.shapes.OperationShape;
 import software.amazon.smithy.model.shapes.ResourceShape;
 import software.amazon.smithy.model.shapes.ServiceShape;
 import software.amazon.smithy.model.shapes.Shape;
+import software.amazon.smithy.model.shapes.ShapeId;
 import software.amazon.smithy.model.shapes.StructureShape;
 import software.amazon.smithy.model.traits.ErrorTrait;
 import software.amazon.smithy.model.traits.UnitTypeTrait;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
+import java.util.Optional;
 
 
 public class LocalServiceGenerator implements Runnable {
@@ -247,6 +251,19 @@ public class LocalServiceGenerator implements Runnable {
                     returnResponse = "%s(*native_response)".formatted(SmithyNameResolver.getToDafnyMethodName(outputShape, ""));
                 }
 
+                for (MemberShape member : inputShape.getAllMembers().values()) {
+                    ShapeId targetShapeId = member.getTarget();
+                    Optional<Shape> targetShapeOptional = model.getShape(targetShapeId);
+                    if(targetShapeOptional.isPresent()){
+                        Shape targetShape = targetShapeOptional.get();
+                        //TODO: What about UTF8Bytes in List, Map?
+                        if(targetShape.isStringShape() && targetShape.hasTrait(DafnyUtf8BytesTrait.class)) {
+                            System.out.println(targetShape);
+                        }
+                    }
+                }
+                
+                    
                 writer.write("""
                                        func (shim *Shim) $L($L) Wrappers.Result {
                                            $L
