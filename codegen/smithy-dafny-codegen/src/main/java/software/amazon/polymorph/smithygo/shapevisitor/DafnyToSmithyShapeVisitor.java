@@ -425,7 +425,28 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                         );
             }
 
-            else if (targetShape.isIntegerShape() || targetShape.isDoubleShape() || targetShape.isLongShape() || targetShape.isBooleanShape()){
+            else if (targetShape.isDoubleShape()) {
+                returnString += """
+                        var b []byte
+                        for i := dafny.Iterate(%s) ; ; {
+                            val, ok := i()
+                            if !ok {
+                                union = &%s.%s{
+                                    Value: []float64{math.Float64frombits(binary.LittleEndian.Uint64(b))}[0],
+                                }
+                                break 
+                            } else {
+                                b = append(b, val.(byte))
+                            }
+                        }
+                    }
+                        """.formatted(
+                            unionDataSource,
+                            SmithyNameResolver.smithyTypesNamespace(shape),
+                            memberName);
+
+            }
+            else if (targetShape.isIntegerShape() || targetShape.isLongShape() || targetShape.isBooleanShape()){
                 returnString += """
                             union = &%s.%s{
                                 Value: %s,
