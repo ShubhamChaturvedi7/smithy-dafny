@@ -11,6 +11,8 @@ module WrappedSimpleUnionTest {
         var client :- expect WrappedSimpleUnionService.WrappedSimpleUnion();
         SimpleUnionImplTest.TestMyUnionInteger(client);
         SimpleUnionImplTest.TestMyUnionString(client);
+        SimpleUnionImplTest.TestMyUnionBoolean(client);
+        SimpleUnionImplTest.TestMyUnionBlob(client);
         SimpleUnionImplTest.TestKnownValueUnionString(client);
 
     }

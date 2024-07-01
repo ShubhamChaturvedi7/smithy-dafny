@@ -28,7 +28,9 @@ structure GetUnionOutput {
 
 union MyUnion {
     IntegerValue: Integer,
-    StringValue: String
+    StringValue: String,
+    BooleanValue: Boolean,
+    BlobValue: Blob
 }
 
 operation GetKnownValueUnion {
