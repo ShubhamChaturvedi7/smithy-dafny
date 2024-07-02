@@ -25,6 +25,13 @@ module SimpleUnionImplTest {
         expect ret.union.value.IntegerValue?;
         expect ret.union.value.IntegerValue == 100;
         expect ret.union.value.StringValue? == false;
+        expect ret.union.value.DoubleValue? == false;
+        expect ret.union.value.LongValue? == false;
+        expect ret.union.value.BooleanValue? == false;
+        expect ret.union.value.BlobValue? == false;
+        expect ret.union.value.MapValue? == false;
+        expect ret.union.value.ListValue? == false;
+        expect ret.union.value.StructureValue? ==false;
     }
 
     method TestMyUnionString(client: ISimpleUnionClient)
@@ -37,7 +44,15 @@ module SimpleUnionImplTest {
         expect ret.union.Some?;
         expect ret.union.value.StringValue?;
         expect ret.union.value.StringValue == "TestString";
+
         expect ret.union.value.IntegerValue? == false;
+        expect ret.union.value.DoubleValue? == false;
+        expect ret.union.value.LongValue? == false;
+        expect ret.union.value.BooleanValue? == false;
+        expect ret.union.value.BlobValue? == false;
+        expect ret.union.value.MapValue? == false;
+        expect ret.union.value.ListValue? == false;
+        expect ret.union.value.StructureValue? ==false;
     }
 
     method TestMyUnionBoolean(client: ISimpleUnionClient)
@@ -52,6 +67,12 @@ module SimpleUnionImplTest {
         expect ret.union.value.BooleanValue == true;
         expect ret.union.value.IntegerValue? == false;
         expect ret.union.value.StringValue? == false;
+        expect ret.union.value.DoubleValue? == false;
+        expect ret.union.value.LongValue? == false;
+        expect ret.union.value.BlobValue? == false;
+        expect ret.union.value.MapValue? == false;
+        expect ret.union.value.ListValue? == false;
+        expect ret.union.value.StructureValue? ==false;
     }
 
     method TestMyUnionBlob(client: ISimpleUnionClient)
@@ -65,10 +86,14 @@ module SimpleUnionImplTest {
         expect ret.union.Some?;
         expect ret.union.value.BlobValue?;
         expect ret.union.value.BlobValue == s;
-        expect ret.union.value.BooleanValue? == false;
         expect ret.union.value.IntegerValue? == false;
         expect ret.union.value.StringValue? == false;
         expect ret.union.value.DoubleValue? == false;
+        expect ret.union.value.LongValue? == false;
+        expect ret.union.value.BooleanValue? == false;
+        expect ret.union.value.MapValue? == false;
+        expect ret.union.value.ListValue? == false;
+        expect ret.union.value.StructureValue? ==false;
     }
 
     method TestMyUnionDouble(client: ISimpleUnionClient)
@@ -82,10 +107,14 @@ module SimpleUnionImplTest {
         expect ret.union.Some?;
         expect ret.union.value.DoubleValue?;
         expect ret.union.value.DoubleValue == s;
-        expect ret.union.value.BlobValue? == false;
-        expect ret.union.value.BooleanValue? == false;
         expect ret.union.value.IntegerValue? == false;
         expect ret.union.value.StringValue? == false;
+        expect ret.union.value.LongValue? == false;
+        expect ret.union.value.BooleanValue? == false;
+        expect ret.union.value.BlobValue? == false;
+        expect ret.union.value.MapValue? == false;
+        expect ret.union.value.ListValue? == false;
+        expect ret.union.value.StructureValue? ==false;
     }
 
     method TestMyUnionMap(client: ISimpleUnionClient)
@@ -99,10 +128,14 @@ module SimpleUnionImplTest {
         expect ret.union.Some?;
         expect ret.union.value.MapValue?;
         expect ret.union.value.MapValue == stringMap;
-        expect ret.union.value.BlobValue? == false;
-        expect ret.union.value.BooleanValue? == false;
         expect ret.union.value.IntegerValue? == false;
         expect ret.union.value.StringValue? == false;
+        expect ret.union.value.DoubleValue? == false;
+        expect ret.union.value.LongValue? == false;
+        expect ret.union.value.BooleanValue? == false;
+        expect ret.union.value.BlobValue? == false;
+        expect ret.union.value.ListValue? == false;
+        expect ret.union.value.StructureValue? ==false;
     }
 
     method TestMyUnionLong(client: ISimpleUnionClient)
@@ -116,11 +149,14 @@ module SimpleUnionImplTest {
         expect ret.union.Some?;
         expect ret.union.value.LongValue?;
         expect ret.union.value.LongValue == inputLong;
-        // expect ret.union.value.MapValue? == false;
-        expect ret.union.value.BlobValue? == false;
-        expect ret.union.value.BooleanValue? == false;
         expect ret.union.value.IntegerValue? == false;
         expect ret.union.value.StringValue? == false;
+        expect ret.union.value.DoubleValue? == false;
+        expect ret.union.value.BooleanValue? == false;
+        expect ret.union.value.BlobValue? == false;
+        expect ret.union.value.MapValue? == false;
+        expect ret.union.value.ListValue? == false;
+        expect ret.union.value.StructureValue? ==false;
     }
 
     
@@ -135,11 +171,14 @@ module SimpleUnionImplTest {
         expect ret.union.Some?;
         expect ret.union.value.ListValue?;
         expect ret.union.value.ListValue == stringList;
-        expect ret.union.value.MapValue? == false;
-        expect ret.union.value.BlobValue? == false;
-        expect ret.union.value.BooleanValue? == false;
         expect ret.union.value.IntegerValue? == false;
         expect ret.union.value.StringValue? == false;
+        expect ret.union.value.DoubleValue? == false;
+        expect ret.union.value.LongValue? == false;
+        expect ret.union.value.BooleanValue? == false;
+        expect ret.union.value.BlobValue? == false;
+        expect ret.union.value.MapValue? == false;
+        expect ret.union.value.StructureValue? ==false;
     }
 
     method TestMyUnionStructure(client: ISimpleUnionClient)
@@ -152,13 +191,15 @@ module SimpleUnionImplTest {
 
         expect ret.union.Some?;
         expect ret.union.value.StructureValue?;
-        expect ret.union.value.StructureValue == structure;
-        expect ret.union.value.ListValue? == false;
-        expect ret.union.value.MapValue? == false;
-        expect ret.union.value.BlobValue? == false;
-        expect ret.union.value.BooleanValue? == false;
+        expect ret.union.value.StructureValue == structure;   
         expect ret.union.value.IntegerValue? == false;
         expect ret.union.value.StringValue? == false;
+        expect ret.union.value.DoubleValue? == false;
+        expect ret.union.value.LongValue? == false;
+        expect ret.union.value.BooleanValue? == false;
+        expect ret.union.value.BlobValue? == false;
+        expect ret.union.value.MapValue? == false;
+        expect ret.union.value.ListValue? == false;
     }
 
     method TestKnownValueUnionString(client: ISimpleUnionClient)
