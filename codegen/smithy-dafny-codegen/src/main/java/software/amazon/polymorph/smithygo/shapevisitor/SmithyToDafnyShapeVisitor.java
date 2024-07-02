@@ -475,103 +475,60 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
             String memberName = context.symbolProvider().toMemberName(member);
             String createMemberFunction = memberName.replace(shape.getId().getName() + "Member", "Create_")+"_";
             Shape targetShape = context.model().expectShape(member.getTarget());
-            
-            // TODO: Map
-            if(targetShape.isMapShape()){
-                String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(companion.%s(%s))";
-                returnString += """
+            String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(companion.%s(%s))";
+            returnString += """
                     case *%s.%s:
                         var companion = %s
                         var inputToConversion = %s
                         if inputToConversion.UnwrapOr(nil) == nil { return Wrappers.Companion_Option_.Create_None_() }
-                        return %s
+                    """.formatted(
+                            SmithyNameResolver.smithyTypesNamespace(shape),
+                            context.symbolProvider().toMemberName(member),
+                            internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
+                            targetShape.accept(
+                                    new SmithyToDafnyShapeVisitor(
+                                        context,dataSource + ".(*" + SmithyNameResolver.smithyTypesNamespace(shape) + "." + context.symbolProvider().toMemberName(member) + ").Value", writer, isConfigShape, true, false
+                                    )
+                                )
+                        );
+            
+            if(targetShape.isMapShape()){
+                returnString += """
+                    return %s
                 """.formatted(
-                    SmithyNameResolver.smithyTypesNamespace(shape),
-                    context.symbolProvider().toMemberName(member),
-                    internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
-                    targetShape.accept(
-                            new SmithyToDafnyShapeVisitor(
-                                context,dataSource + ".(*" + SmithyNameResolver.smithyTypesNamespace(shape) + "." + context.symbolProvider().toMemberName(member) + ").Value", writer, isConfigShape, true, false
-                            )
-                        ),
                     someWrapIfRequired.formatted(
                         createMemberFunction,
                         "inputToConversion.UnwrapOr(nil).(dafny.Map)"
                     )
                 );
             }
-            
-
-            if(targetShape.isBlobShape()){
-                String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(companion.%s(%s))";
+            if(targetShape.isIntegerShape()){
                 returnString += """
-                    case *%s.%s:
-                    var companion = %s
-                    var v []interface{}
-                    for _, e := range %s.(*%s.%s).Value {
-                    	v = append(v, e)
-                    }
-                    return %s;
-                """.formatted(
-                    SmithyNameResolver.smithyTypesNamespace(shape),
-                    context.symbolProvider().toMemberName(member),
-                    internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
-                    dataSource,
-                    SmithyNameResolver.smithyTypesNamespace(shape),
-                    context.symbolProvider().toMemberName(member),
-                    someWrapIfRequired.formatted(createMemberFunction, "dafny.SeqOf(v...)")
-                );
-            }
-            if(targetShape.isIntegerShape() || targetShape.isBooleanShape() || targetShape.isLongShape()){
-                returnString += """
-                                case *%s.%s:
-                                    var companion = %s
-                                    return Wrappers.Companion_Option_.Create_Some_(companion.%s(%s.(*%s.%s).Value))
+                                return %s
                             """.formatted(
-                                SmithyNameResolver.smithyTypesNamespace(shape),
-                                context.symbolProvider().toMemberName(member),
-                                internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
-                                createMemberFunction,
-                                dataSource,
-                                SmithyNameResolver.smithyTypesNamespace(shape),
-                                context.symbolProvider().toMemberName(member)
+                                someWrapIfRequired.formatted(createMemberFunction, "inputToConversion.UnwrapOr(nil).(int32)")
                             );
             }
-            if(targetShape.isDoubleShape()){
-                String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(companion.%s(%s))";
+
+            if(targetShape.isLongShape()){
                 returnString += """
-                    case *%s.%s:
-                        var companion = %s
-                        var bits = math.Float64bits(%s.(*%s.%s).Value)
-                        var bytes = make([]byte, 8)
-                        binary.LittleEndian.PutUint64(bytes, bits)
-                        var v []interface{}
-                        for _, e := range bytes {
-                        v = append(v, e)
-                        }
-                        return %s;
-                        """.formatted(
-                            SmithyNameResolver.smithyTypesNamespace(shape),
-                            context.symbolProvider().toMemberName(member),
-                            internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
-                            dataSource,
-                            SmithyNameResolver.smithyTypesNamespace(shape),
-                            context.symbolProvider().toMemberName(member),
-                            someWrapIfRequired.formatted(createMemberFunction, "dafny.SeqOf(v...)")
-                        );
-            }
-            else if(targetShape.isStringShape()){
-                var underlyingType = "dafny.SeqOfChars([]dafny.Char((%s.(*%s.%s)).Value)...)".formatted(dataSource,SmithyNameResolver.smithyTypesNamespace(shape),context.symbolProvider().toMemberName(member));
-                returnString += """
-                                case *%s.%s:
-                                    var companion = %s
-                                    return Wrappers.Companion_Option_.Create_Some_(companion.%s(%s))
+                                return %s
                             """.formatted(
-                                SmithyNameResolver.smithyTypesNamespace(shape),
-                                context.symbolProvider().toMemberName(member),
-                                internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
-                                createMemberFunction,
-                                underlyingType
+                                someWrapIfRequired.formatted(createMemberFunction, "inputToConversion.UnwrapOr(nil).(int64)")
+                            );
+            }
+            if(targetShape.isBooleanShape()){
+                returnString += """
+                                return %s
+                            """.formatted(
+                                someWrapIfRequired.formatted(createMemberFunction, "inputToConversion.UnwrapOr(nil).(bool)")
+                            );
+            }
+            if(targetShape.isDoubleShape() || targetShape.isStringShape() || targetShape.isBlobShape() || targetShape.isListShape()){
+                returnString += """
+                                return %s
+                            """.formatted(
+                                someWrapIfRequired.formatted(createMemberFunction, "inputToConversion.UnwrapOr(nil).(dafny.Sequence)")
                             );
             }
         }

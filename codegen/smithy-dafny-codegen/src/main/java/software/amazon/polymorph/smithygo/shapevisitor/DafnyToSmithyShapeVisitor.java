@@ -480,21 +480,21 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                             );
             }
 
-            else if (targetShape.isMapShape()){
-                MapShape mapShape = targetShape.asMapShape().get();
-                returnString += """
-                            union = &%s.%s{
-                                Value: %s,
-                            }
-                        }
-                        """.formatted(
-                            SmithyNameResolver.smithyTypesNamespace(shape),
-                            memberName,
-                            targetShape.accept(
-                                new DafnyToSmithyShapeVisitor(context, dataSource, writer, isConfigShape)
-                            )
-                            );
-            }
+            // else if (targetShape.isMapShape()){
+            //     System.out.println(unionDataSource);
+            //     returnString += """
+            //                 union = &%s.%s{
+            //                     Value: %s,
+            //                 }
+            //             }
+            //             """.formatted(
+            //                 SmithyNameResolver.smithyTypesNamespace(shape),
+            //                 memberName,
+            //                 targetShape.accept(
+            //                     new DafnyToSmithyShapeVisitor(context, unionDataSource, writer, isConfigShape)
+            //                 )
+            //                 );
+            // }
         }
 
         returnString += """
