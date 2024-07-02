@@ -531,6 +531,13 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
                                 someWrapIfRequired.formatted(createMemberFunction, "inputToConversion.UnwrapOr(nil).(dafny.Sequence)")
                             );
             }
+            if(targetShape.isStructureShape()) {
+                returnString += """
+                                return %s
+                            """.formatted(
+                                someWrapIfRequired.formatted(createMemberFunction, "inputToConversion.UnwrapOr(nil).(%s.%s)".formatted(DafnyNameResolver.dafnyTypesNamespace(shape),targetShape.getId().getName()))
+                            );
+            }
         }
         returnString += """
                         default:

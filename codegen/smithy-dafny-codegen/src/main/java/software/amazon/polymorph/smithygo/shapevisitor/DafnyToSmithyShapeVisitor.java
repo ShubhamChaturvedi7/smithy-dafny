@@ -414,7 +414,7 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                             ));
             }
 
-            else if (targetShape.isListShape()){
+            else if (targetShape.isListShape() || targetShape.isStructureShape()){
                 returnString += """
                             union = &%s.%s{
                                 Value: %s,
