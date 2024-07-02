@@ -502,7 +502,7 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
                     )
                 );
             }
-            if(targetShape.isIntegerShape()){
+            else if(targetShape.isIntegerShape()){
                 returnString += """
                                 return %s
                             """.formatted(
@@ -511,7 +511,7 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
                                     "inputToConversion.UnwrapOr(nil).(int32)")
                             );
             }
-            if(targetShape.isLongShape()){
+            else if(targetShape.isLongShape()){
                 returnString += """
                                 return %s
                             """.formatted(
@@ -520,7 +520,7 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
                                     "inputToConversion.UnwrapOr(nil).(int64)")
                             );
             }
-            if(targetShape.isBooleanShape()){
+            else if(targetShape.isBooleanShape()){
                 returnString += """
                                 return %s
                             """.formatted(
@@ -529,7 +529,7 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
                                     "inputToConversion.UnwrapOr(nil).(bool)")
                             );
             }
-            if(targetShape.isDoubleShape() || targetShape.isStringShape() || targetShape.isBlobShape() || targetShape.isListShape()){
+            else if(targetShape.isDoubleShape() || targetShape.isStringShape() || targetShape.isBlobShape() || targetShape.isListShape()){
                 returnString += """
                                 return %s
                             """.formatted(
@@ -538,7 +538,7 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
                                     "inputToConversion.UnwrapOr(nil).(dafny.Sequence)")
                             );
             }
-            if(targetShape.isStructureShape()) {
+            else if(targetShape.isStructureShape()) {
                 returnString += """
                                 return %s
                             """.formatted(
