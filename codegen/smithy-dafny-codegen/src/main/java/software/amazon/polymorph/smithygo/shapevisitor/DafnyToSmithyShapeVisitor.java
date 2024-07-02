@@ -482,34 +482,17 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
 
             else if (targetShape.isMapShape()){
                 MapShape mapShape = targetShape.asMapShape().get();
-                MemberShape keyMemberShape = mapShape.getKey();
-                final Shape keyTargetShape = context.model().expectShape(keyMemberShape.getTarget());
-                MemberShape valueMemberShape = mapShape.getValue();
-                final Shape valueTargetShape = context.model().expectShape(valueMemberShape.getTarget());
-                final String typeName = targetShape.isStructureShape() ? context.symbolProvider().toSymbol(member).getFullName() : context.symbolProvider().toSymbol(member).getName();
                 returnString += """
-                            var m map[string]%s = make(map[string]%s)
-                            for i := dafny.Iterate(%s.Items());; {
-                                val, ok := i()
-                                if !ok {
-                                    union = &%s.%s{
-                                        Value: m,
-                                    }
-                                    break;
-                                }
-                                m[*%s] = *%s
+                            union = &%s.%s{
+                                Value: %s,
                             }
                         }
                         """.formatted(
-                            typeName, typeName,
-                            unionDataSource,
-                            keyTargetShape.accept(
-                                new DafnyToSmithyShapeVisitor(context, "(*val.(dafny.Tuple).IndexInt(0))", writer, isConfigShape)),
-                            valueTargetShape.accept(
-                                new DafnyToSmithyShapeVisitor(context, "(*val.(dafny.Tuple).IndexInt(1))", writer, isConfigShape)
-                            ),
                             SmithyNameResolver.smithyTypesNamespace(shape),
-                            memberName
+                            memberName,
+                            targetShape.accept(
+                                new DafnyToSmithyShapeVisitor(context, dataSource, writer, isConfigShape)
+                            )
                             );
             }
         }
