@@ -88,22 +88,22 @@ module SimpleUnionImplTest {
         expect ret.union.value.StringValue? == false;
     }
 
-    // method TestMyUnionMap(client: ISimpleUnionClient)
-    //   requires client.ValidState()
-    //   modifies client.Modifies
-    //   ensures client.ValidState()
-    // {
-    //     var stringMap := map["Test1" := "Success"];
-    //     var ret :- expect client.GetUnion(GetUnionInput(union := Some(MapValue(stringMap))));
+    method TestMyUnionMap(client: ISimpleUnionClient)
+      requires client.ValidState()
+      modifies client.Modifies
+      ensures client.ValidState()
+    {
+        var stringMap := map["Test1" := "Success"];
+        var ret :- expect client.GetUnion(GetUnionInput(union := Some(MapValue(stringMap))));
 
-    //     expect ret.union.Some?;
-    //     expect ret.union.value.MapValue?;
-    //     expect ret.union.value.MapValue == stringMap;
-    //     expect ret.union.value.BlobValue? == false;
-    //     expect ret.union.value.BooleanValue? == false;
-    //     expect ret.union.value.IntegerValue? == false;
-    //     expect ret.union.value.StringValue? == false;
-    // }
+        expect ret.union.Some?;
+        expect ret.union.value.MapValue?;
+        expect ret.union.value.MapValue == stringMap;
+        expect ret.union.value.BlobValue? == false;
+        expect ret.union.value.BooleanValue? == false;
+        expect ret.union.value.IntegerValue? == false;
+        expect ret.union.value.StringValue? == false;
+    }
 
     method TestMyUnionLong(client: ISimpleUnionClient)
       requires client.ValidState()
@@ -116,6 +116,25 @@ module SimpleUnionImplTest {
         expect ret.union.Some?;
         expect ret.union.value.LongValue?;
         expect ret.union.value.LongValue == inputLong;
+        // expect ret.union.value.MapValue? == false;
+        expect ret.union.value.BlobValue? == false;
+        expect ret.union.value.BooleanValue? == false;
+        expect ret.union.value.IntegerValue? == false;
+        expect ret.union.value.StringValue? == false;
+    }
+
+    
+    method TestMyUnionList(client: ISimpleUnionClient)
+      requires client.ValidState()
+      modifies client.Modifies
+      ensures client.ValidState()
+    {
+        var stringList := ["Test"];
+        var ret :- expect client.GetUnion(GetUnionInput(union := Some(ListValue(stringList))));
+
+        expect ret.union.Some?;
+        expect ret.union.value.ListValue?;
+        expect ret.union.value.ListValue == stringList;
         // expect ret.union.value.MapValue? == false;
         expect ret.union.value.BlobValue? == false;
         expect ret.union.value.BooleanValue? == false;

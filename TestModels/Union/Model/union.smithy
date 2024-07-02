@@ -32,7 +32,13 @@ union MyUnion {
     BooleanValue: Boolean,
     BlobValue: Blob,
     DoubleValue: Double,
-    LongValue: Long
+    LongValue: Long,
+    ListValue: SimpleStringList,
+    MapValue: SimpleMap
+}
+
+list SimpleStringList {
+  member: String
 }
 
 map SimpleMap {
