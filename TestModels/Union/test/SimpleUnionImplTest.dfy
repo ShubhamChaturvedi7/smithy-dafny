@@ -135,7 +135,26 @@ module SimpleUnionImplTest {
         expect ret.union.Some?;
         expect ret.union.value.ListValue?;
         expect ret.union.value.ListValue == stringList;
-        // expect ret.union.value.MapValue? == false;
+        expect ret.union.value.MapValue? == false;
+        expect ret.union.value.BlobValue? == false;
+        expect ret.union.value.BooleanValue? == false;
+        expect ret.union.value.IntegerValue? == false;
+        expect ret.union.value.StringValue? == false;
+    }
+
+    method TestMyUnionStructure(client: ISimpleUnionClient)
+      requires client.ValidState()
+      modifies client.Modifies
+      ensures client.ValidState()
+    {
+        var structure := SimpleStruture(Intvalue:= Some(20));
+        var ret :- expect client.GetUnion(GetUnionInput(union := Some(StructureValue(structure))));
+
+        expect ret.union.Some?;
+        expect ret.union.value.StructureValue?;
+        expect ret.union.value.StructureValue == structure;
+        expect ret.union.value.ListValue? == false;
+        expect ret.union.value.MapValue? == false;
         expect ret.union.value.BlobValue? == false;
         expect ret.union.value.BooleanValue? == false;
         expect ret.union.value.IntegerValue? == false;
