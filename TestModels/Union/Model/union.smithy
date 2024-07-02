@@ -31,7 +31,13 @@ union MyUnion {
     StringValue: String,
     BooleanValue: Boolean,
     BlobValue: Blob,
-    DoubleValue: Double
+    DoubleValue: Double,
+    MapValue: SimpleMap
+}
+
+map SimpleMap {
+  key: String,
+  value: String
 }
 
 operation GetKnownValueUnion {
