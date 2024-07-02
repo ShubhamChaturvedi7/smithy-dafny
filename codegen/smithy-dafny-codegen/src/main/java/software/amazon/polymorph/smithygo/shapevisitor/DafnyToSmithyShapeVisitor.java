@@ -447,6 +447,11 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
 
             }
             else if (targetShape.isIntegerShape() || targetShape.isLongShape() || targetShape.isBooleanShape()){
+                // System.out.println(member);
+                // System.out.println(this.context.symbolProvider().toSymbol(member).getProperty(POINTABLE));
+                // System.out.println(member.accept(
+                //                         new DafnyToSmithyShapeVisitor(context, unionDataSource, writer, isConfigShape)
+                //                     ));
                 returnString += """
                             union = &%s.%s{
                                 Value: %s,
@@ -459,25 +464,17 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
             }
 
             else if (targetShape.isListShape()){
-                final String typeName = targetShape.isStructureShape() ? context.symbolProvider().toSymbol(member).getFullName() : context.symbolProvider().toSymbol(member).getName();
                 returnString += """
-                            var fieldValue []%s
-                            for i := dafny.Iterate(%s); ;{
-                                val, ok := i()
-                                if !ok {
-                                    union = &%s.%s{
-                                        Value: fieldValue,
-                                    }
-                                    break
-                                }
+                            union = &%s.%s{
+                                Value: %s,
                             }
                         }
                         """.formatted(
-                            typeName,
-                            unionDataSource,
-                            SmithyNameResolver.smithyTypesNamespace(shape),
-                            memberName
-                            );
+                        SmithyNameResolver.smithyTypesNamespace(shape),
+                        memberName,
+                        targetShape.accept(
+                                new DafnyToSmithyShapeVisitor(context, unionDataSource, writer, isConfigShape)
+                            ));
             }
 
             // else if (targetShape.isMapShape()){
