@@ -4,6 +4,7 @@ include "../src/Index.dfy"
 
 module SimpleUnionImplTest {
     import SimpleUnion
+    import opened StandardLibrary.UInt
     import opened SimpleUnionTypes
     import opened Wrappers
     method{:test} TestUnion(){
@@ -87,17 +88,35 @@ module SimpleUnionImplTest {
         expect ret.union.value.StringValue? == false;
     }
 
-    method TestMyUnionMap(client: ISimpleUnionClient)
+    // method TestMyUnionMap(client: ISimpleUnionClient)
+    //   requires client.ValidState()
+    //   modifies client.Modifies
+    //   ensures client.ValidState()
+    // {
+    //     var stringMap := map["Test1" := "Success"];
+    //     var ret :- expect client.GetUnion(GetUnionInput(union := Some(MapValue(stringMap))));
+
+    //     expect ret.union.Some?;
+    //     expect ret.union.value.MapValue?;
+    //     expect ret.union.value.MapValue == stringMap;
+    //     expect ret.union.value.BlobValue? == false;
+    //     expect ret.union.value.BooleanValue? == false;
+    //     expect ret.union.value.IntegerValue? == false;
+    //     expect ret.union.value.StringValue? == false;
+    // }
+
+    method TestMyUnionLong(client: ISimpleUnionClient)
       requires client.ValidState()
       modifies client.Modifies
       ensures client.ValidState()
     {
-        var stringMap := map["Test1" := "Success"];
-        var ret :- expect client.GetUnion(GetUnionInput(union := Some(MapValue(stringMap))));
+        var inputLong: int64 := 5;
+        var ret :- expect client.GetUnion(GetUnionInput(union := Some(LongValue(inputLong))));
 
         expect ret.union.Some?;
-        expect ret.union.value.MapValue?;
-        expect ret.union.value.MapValue == stringMap;
+        expect ret.union.value.LongValue?;
+        expect ret.union.value.LongValue == inputLong;
+        // expect ret.union.value.MapValue? == false;
         expect ret.union.value.BlobValue? == false;
         expect ret.union.value.BooleanValue? == false;
         expect ret.union.value.IntegerValue? == false;
