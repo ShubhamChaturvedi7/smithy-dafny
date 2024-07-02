@@ -403,26 +403,20 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
             }
 
             else if (targetShape.isStringShape()){
-                var underlyingType = targetShape.hasTrait(DafnyUtf8BytesTrait.class) ? "uint8" : "dafny.Char";
+                writer.addImportFromModule("github.com/dafny-lang/DafnyStandardLibGo", "Wrappers");
                 returnString += """
-                            var s string
-                            for i := dafny.Iterate(%s) ; ; {
-                                val, ok := i()
-                                if !ok {
-                                    union = &%s.%s{
-                                        Value: []string{s}[0],
-                                    }
-                                    break
-                                } else {
-                                    s = s + string(val.(%s))
-                                }
+                            var dataSouce = Wrappers.Companion_Option_.Create_Some_(%s)
+                            union = &%s.%s{
+                                Value: *(%s),
                             }
                         }
-                        """.formatted(unionDataSource,
+                        """.formatted(
+                            unionDataSource,
                         SmithyNameResolver.smithyTypesNamespace(shape),
                         memberName,
-                        underlyingType
-                        );
+                        targetShape.accept(
+                                new DafnyToSmithyShapeVisitor(context, "dataSouce.UnwrapOr(nil)", writer, isConfigShape)
+                            ));
             }
 
             else if (targetShape.isDoubleShape()) {
@@ -447,20 +441,20 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
 
             }
             else if (targetShape.isIntegerShape() || targetShape.isLongShape() || targetShape.isBooleanShape()){
-                // System.out.println(member);
-                // System.out.println(this.context.symbolProvider().toSymbol(member).getProperty(POINTABLE));
-                // System.out.println(member.accept(
-                //                         new DafnyToSmithyShapeVisitor(context, unionDataSource, writer, isConfigShape)
-                //                     ));
+                writer.addImportFromModule("github.com/dafny-lang/DafnyStandardLibGo", "Wrappers");
                 returnString += """
+                            var dataSouce = Wrappers.Companion_Option_.Create_Some_(%s)
                             union = &%s.%s{
-                                Value: %s,
+                                Value: *(%s),
                             }
                         }
                         """.formatted(
+                            unionDataSource,
                         SmithyNameResolver.smithyTypesNamespace(shape),
                         memberName,
-                        unionDataSource);
+                        targetShape.accept(
+                                new DafnyToSmithyShapeVisitor(context, "dataSouce.UnwrapOr(nil)", writer, isConfigShape)
+                            ));
             }
 
             else if (targetShape.isListShape()){
@@ -477,21 +471,22 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                             ));
             }
 
-            // else if (targetShape.isMapShape()){
-            //     System.out.println(unionDataSource);
-            //     returnString += """
-            //                 union = &%s.%s{
-            //                     Value: %s,
-            //                 }
-            //             }
-            //             """.formatted(
-            //                 SmithyNameResolver.smithyTypesNamespace(shape),
-            //                 memberName,
-            //                 targetShape.accept(
-            //                     new DafnyToSmithyShapeVisitor(context, unionDataSource, writer, isConfigShape)
-            //                 )
-            //                 );
-            // }
+            else if (targetShape.isMapShape()){
+                writer.addImportFromModule("github.com/dafny-lang/DafnyStandardLibGo", "Wrappers");
+                returnString += """
+                            var dataSouce = Wrappers.Companion_Option_.Create_Some_(%s)
+                            union = &%s.%s{
+                                Value: %s,
+                            }
+                        }
+                        """.formatted(
+                            unionDataSource,
+                        SmithyNameResolver.smithyTypesNamespace(shape),
+                        memberName,
+                        targetShape.accept(
+                                new DafnyToSmithyShapeVisitor(context, "dataSouce.UnwrapOr(nil)", writer, isConfigShape)
+                            ));
+            }
         }
 
         returnString += """
