@@ -380,29 +380,7 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                         memberName.replace(shape.getId().getName() + "Member", "Is_")
                         );
 
-            if (targetShape.isBlobShape()){
-                returnString += """
-                            var b []byte
-                            for i := dafny.Iterate(%s) ; ; {
-                                val, ok := i()
-                                if !ok {
-                                    union = &%s.%s{
-                                        Value: b,
-                                    }
-                                    break
-                                } else {
-                                    b = append(b, val.(byte))
-                                }
-                            }
-                            
-                        }
-                        """.formatted(
-                            unionDataSource,
-                            SmithyNameResolver.smithyTypesNamespace(shape),
-                            memberName);
-            }
-
-            else if (targetShape.isStringShape()){
+            if (targetShape.isStringShape() || targetShape.isDoubleShape()){
                 writer.addImportFromModule("github.com/dafny-lang/DafnyStandardLibGo", "Wrappers");
                 returnString += """
                             var dataSouce = Wrappers.Companion_Option_.Create_Some_(%s)
@@ -419,27 +397,6 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                             ));
             }
 
-            else if (targetShape.isDoubleShape()) {
-                returnString += """
-                        var b []byte
-                        for i := dafny.Iterate(%s) ; ; {
-                            val, ok := i()
-                            if !ok {
-                                union = &%s.%s{
-                                    Value: []float64{math.Float64frombits(binary.LittleEndian.Uint64(b))}[0],
-                                }
-                                break 
-                            } else {
-                                b = append(b, val.(byte))
-                            }
-                        }
-                    }
-                        """.formatted(
-                            unionDataSource,
-                            SmithyNameResolver.smithyTypesNamespace(shape),
-                            memberName);
-
-            }
             else if (targetShape.isIntegerShape() || targetShape.isLongShape() || targetShape.isBooleanShape()){
                 writer.addImportFromModule("github.com/dafny-lang/DafnyStandardLibGo", "Wrappers");
                 returnString += """
@@ -471,7 +428,7 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                             ));
             }
 
-            else if (targetShape.isMapShape()){
+            else if (targetShape.isMapShape() || targetShape.isBlobShape()){
                 writer.addImportFromModule("github.com/dafny-lang/DafnyStandardLibGo", "Wrappers");
                 returnString += """
                             var dataSouce = Wrappers.Companion_Option_.Create_Some_(%s)
