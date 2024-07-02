@@ -1,7 +1,6 @@
 // Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 namespace simple.union
-use aws.polymorph#MyStructure
 
 @aws.polymorph#localService(
   sdkId: "SimpleUnion",
