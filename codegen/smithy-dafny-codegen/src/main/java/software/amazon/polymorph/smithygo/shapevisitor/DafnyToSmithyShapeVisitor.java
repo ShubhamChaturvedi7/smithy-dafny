@@ -379,7 +379,6 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                         rawUnionDataSource,
                         memberName.replace(shape.getId().getName() + "Member", "Is_")
                         );
-
             if (targetShape.isIntegerShape() || targetShape.isLongShape() || targetShape.isBooleanShape() || targetShape.isStringShape() || targetShape.isDoubleShape()){
                 writer.addImportFromModule("github.com/dafny-lang/DafnyStandardLibGo", "Wrappers");
                 returnString += """
@@ -396,7 +395,6 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                                 new DafnyToSmithyShapeVisitor(context, "dataSouce.UnwrapOr(nil)", writer, isConfigShape)
                             ));
             }
-
             else if (targetShape.isListShape() || targetShape.isStructureShape()){
                 returnString += """
                             union = &%s.%s{
@@ -428,7 +426,6 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                             ));
             }
         }
-
         returnString += """
             return union
             }()""";

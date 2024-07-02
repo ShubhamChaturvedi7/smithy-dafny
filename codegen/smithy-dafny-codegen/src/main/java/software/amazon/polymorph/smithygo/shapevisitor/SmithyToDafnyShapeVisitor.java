@@ -511,7 +511,6 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
                                     "inputToConversion.UnwrapOr(nil).(int32)")
                             );
             }
-
             if(targetShape.isLongShape()){
                 returnString += """
                                 return %s
