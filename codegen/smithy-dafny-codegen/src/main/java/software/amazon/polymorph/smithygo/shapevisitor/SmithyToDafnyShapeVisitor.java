@@ -506,7 +506,9 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
                 returnString += """
                                 return %s
                             """.formatted(
-                                someWrapIfRequired.formatted(createMemberFunction, "inputToConversion.UnwrapOr(nil).(int32)")
+                                someWrapIfRequired.formatted(
+                                    createMemberFunction, 
+                                    "inputToConversion.UnwrapOr(nil).(int32)")
                             );
             }
 
@@ -514,34 +516,42 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
                 returnString += """
                                 return %s
                             """.formatted(
-                                someWrapIfRequired.formatted(createMemberFunction, "inputToConversion.UnwrapOr(nil).(int64)")
+                                someWrapIfRequired.formatted(
+                                    createMemberFunction, 
+                                    "inputToConversion.UnwrapOr(nil).(int64)")
                             );
             }
             if(targetShape.isBooleanShape()){
                 returnString += """
                                 return %s
                             """.formatted(
-                                someWrapIfRequired.formatted(createMemberFunction, "inputToConversion.UnwrapOr(nil).(bool)")
+                                someWrapIfRequired.formatted(
+                                    createMemberFunction, 
+                                    "inputToConversion.UnwrapOr(nil).(bool)")
                             );
             }
             if(targetShape.isDoubleShape() || targetShape.isStringShape() || targetShape.isBlobShape() || targetShape.isListShape()){
                 returnString += """
                                 return %s
                             """.formatted(
-                                someWrapIfRequired.formatted(createMemberFunction, "inputToConversion.UnwrapOr(nil).(dafny.Sequence)")
+                                someWrapIfRequired.formatted(
+                                    createMemberFunction, 
+                                    "inputToConversion.UnwrapOr(nil).(dafny.Sequence)")
                             );
             }
             if(targetShape.isStructureShape()) {
                 returnString += """
                                 return %s
                             """.formatted(
-                                someWrapIfRequired.formatted(createMemberFunction, "inputToConversion.UnwrapOr(nil).(%s.%s)".formatted(DafnyNameResolver.dafnyTypesNamespace(shape),targetShape.getId().getName()))
+                                someWrapIfRequired.formatted(
+                                    createMemberFunction, 
+                                    "inputToConversion.UnwrapOr(nil).(%s.%s)".formatted(DafnyNameResolver.dafnyTypesNamespace(shape),targetShape.getId().getName()))
                             );
             }
         }
         returnString += """
                         default:
-				            panic("unhandled union type")
+				            panic("Unhandled union type")
                     }
                 }()""";
         return returnString;

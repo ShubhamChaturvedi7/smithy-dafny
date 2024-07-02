@@ -380,24 +380,7 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                         memberName.replace(shape.getId().getName() + "Member", "Is_")
                         );
 
-            if (targetShape.isStringShape() || targetShape.isDoubleShape()){
-                writer.addImportFromModule("github.com/dafny-lang/DafnyStandardLibGo", "Wrappers");
-                returnString += """
-                            var dataSouce = Wrappers.Companion_Option_.Create_Some_(%s)
-                            union = &%s.%s{
-                                Value: *(%s),
-                            }
-                        }
-                        """.formatted(
-                            unionDataSource,
-                        SmithyNameResolver.smithyTypesNamespace(shape),
-                        memberName,
-                        targetShape.accept(
-                                new DafnyToSmithyShapeVisitor(context, "dataSouce.UnwrapOr(nil)", writer, isConfigShape)
-                            ));
-            }
-
-            else if (targetShape.isIntegerShape() || targetShape.isLongShape() || targetShape.isBooleanShape()){
+            if (targetShape.isIntegerShape() || targetShape.isLongShape() || targetShape.isBooleanShape() || targetShape.isStringShape() || targetShape.isDoubleShape()){
                 writer.addImportFromModule("github.com/dafny-lang/DafnyStandardLibGo", "Wrappers");
                 returnString += """
                             var dataSouce = Wrappers.Companion_Option_.Create_Some_(%s)
