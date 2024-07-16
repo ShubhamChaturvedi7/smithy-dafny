@@ -373,58 +373,34 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
             String memberName = context.symbolProvider().toMemberName(member);
             String rawUnionDataSource = "(" + dataSource + ".(" + DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape)) + "))";
             String unionDataSource = rawUnionDataSource + ".Dtor_" + memberName.replace(shape.getId().getName() + "Member", "") + "()";
+            String pointerForPointableShape = (boolean)this.context.symbolProvider().toSymbol(targetShape).getProperty(POINTABLE).orElse(false) && !targetShape.isStructureShape() ? "*" : "";
             returnString += """
                         if ((%s).%s()) {
                     """.formatted(
                         rawUnionDataSource,
                         memberName.replace(shape.getId().getName() + "Member", "Is_")
                         );
-            if (targetShape.isIntegerShape() || targetShape.isLongShape() || targetShape.isBooleanShape() || targetShape.isStringShape() || targetShape.isDoubleShape()){
-                writer.addImportFromModule("github.com/dafny-lang/DafnyStandardLibGo", "Wrappers");
+            if (!(targetShape.isListShape() || targetShape.isStructureShape())) {
+                // All other shape except list and structure needs a Wrapper object but unionDataSource is not a Wrapper object. 
                 returnString += """
-                            var dataSouce = Wrappers.Companion_Option_.Create_Some_(%s)
-                            union = &%s.%s{
-                                Value: *(%s),
-                            }
-                        }
-                        """.formatted(
-                            unionDataSource,
-                        SmithyNameResolver.smithyTypesNamespace(shape),
-                        memberName,
-                        targetShape.accept(
-                                new DafnyToSmithyShapeVisitor(context, "dataSouce.UnwrapOr(nil)", writer, isConfigShape)
-                            ));
+                    var dataSource = Wrappers.Companion_Option_.Create_Some_(%s)
+                    """.formatted(
+                        unionDataSource
+                    );
+                unionDataSource = "dataSource.UnwrapOr(nil)";
             }
-            else if (targetShape.isListShape() || targetShape.isStructureShape()){
-                returnString += """
+            returnString += """
                             union = &%s.%s{
-                                Value: %s,
+                                    Value: %s(%s),
+                                }
                             }
-                        }
                         """.formatted(
-                        SmithyNameResolver.smithyTypesNamespace(shape),
-                        memberName,
-                        targetShape.accept(
-                                new DafnyToSmithyShapeVisitor(context, unionDataSource, writer, isConfigShape)
-                            ));
-            }
-
-            else if (targetShape.isMapShape() || targetShape.isBlobShape()){
-                writer.addImportFromModule("github.com/dafny-lang/DafnyStandardLibGo", "Wrappers");
-                returnString += """
-                            var dataSouce = Wrappers.Companion_Option_.Create_Some_(%s)
-                            union = &%s.%s{
-                                Value: %s,
-                            }
-                        }
-                        """.formatted(
-                            unionDataSource,
-                        SmithyNameResolver.smithyTypesNamespace(shape),
-                        memberName,
-                        targetShape.accept(
-                                new DafnyToSmithyShapeVisitor(context, "dataSouce.UnwrapOr(nil)", writer, isConfigShape)
-                            ));
-            }
+                            SmithyNameResolver.smithyTypesNamespace(shape),
+                            memberName,
+                            pointerForPointableShape,
+                            targetShape.accept(
+                                    new DafnyToSmithyShapeVisitor(context, unionDataSource, writer, isConfigShape)
+                                ));
         }
         returnString += """
             return union
