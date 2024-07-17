@@ -481,7 +481,6 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
                     case *%s.%s:
                         var companion = %s
                         var inputToConversion = %s
-                        if inputToConversion.UnwrapOr(nil) == nil { return Wrappers.Companion_Option_.Create_None_() }
                     """.formatted(
                             SmithyNameResolver.smithyTypesNamespace(shape),
                             context.symbolProvider().toMemberName(member),
