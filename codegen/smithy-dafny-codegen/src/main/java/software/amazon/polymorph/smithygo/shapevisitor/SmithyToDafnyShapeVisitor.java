@@ -305,6 +305,7 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
     public String stringShape(StringShape shape) {
         writer.addImportFromModule("github.com/dafny-lang/DafnyRuntimeGo", "dafny");
         if (shape.hasTrait(EnumTrait.class)) {
+            System.out.println(shape.getType());
             String nilWrapIfRequired = "nil";
             String someWrapIfRequired = "%s";
             String returnType = DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape));
@@ -491,62 +492,15 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
                                     )
                                 )
                         );
-            
-            if(targetShape.isMapShape()){
-                returnString += """
+            String baseType = DafnyNameResolver.getBaseDafnyType(targetShape,context.symbolProvider().toSymbol(targetShape));
+            returnString += """
                     return %s
                 """.formatted(
                     someWrapIfRequired.formatted(
                         createMemberFunction,
-                        "inputToConversion.UnwrapOr(nil).(dafny.Map)"
+                        "inputToConversion.UnwrapOr(nil)%s".formatted(baseType != "" ? ".(" + baseType + ")" : "")
                     )
                 );
-            }
-            else if(targetShape.isIntegerShape()){
-                returnString += """
-                                return %s
-                            """.formatted(
-                                someWrapIfRequired.formatted(
-                                    createMemberFunction, 
-                                    "inputToConversion.UnwrapOr(nil).(int32)")
-                            );
-            }
-            else if(targetShape.isLongShape()){
-                returnString += """
-                                return %s
-                            """.formatted(
-                                someWrapIfRequired.formatted(
-                                    createMemberFunction, 
-                                    "inputToConversion.UnwrapOr(nil).(int64)")
-                            );
-            }
-            else if(targetShape.isBooleanShape()){
-                returnString += """
-                                return %s
-                            """.formatted(
-                                someWrapIfRequired.formatted(
-                                    createMemberFunction, 
-                                    "inputToConversion.UnwrapOr(nil).(bool)")
-                            );
-            }
-            else if(targetShape.isDoubleShape() || targetShape.isStringShape() || targetShape.isBlobShape() || targetShape.isListShape()){
-                returnString += """
-                                return %s
-                            """.formatted(
-                                someWrapIfRequired.formatted(
-                                    createMemberFunction, 
-                                    "inputToConversion.UnwrapOr(nil).(dafny.Sequence)")
-                            );
-            }
-            else if(targetShape.isStructureShape()) {
-                returnString += """
-                                return %s
-                            """.formatted(
-                                someWrapIfRequired.formatted(
-                                    createMemberFunction, 
-                                    "inputToConversion.UnwrapOr(nil).(%s.%s)".formatted(DafnyNameResolver.dafnyTypesNamespace(shape),targetShape.getId().getName()))
-                            );
-            }
         }
         returnString += """
                         default:
