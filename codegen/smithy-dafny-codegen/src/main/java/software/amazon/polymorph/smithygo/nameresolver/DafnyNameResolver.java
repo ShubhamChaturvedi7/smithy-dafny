@@ -6,7 +6,9 @@ import software.amazon.smithy.codegen.core.Symbol;
 import software.amazon.smithy.model.shapes.ServiceShape;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
+import software.amazon.smithy.model.shapes.ShapeType;
 import software.amazon.smithy.model.shapes.ToShapeId;
+import software.amazon.smithy.model.traits.EnumTrait;
 
 import static software.amazon.polymorph.smithygo.nameresolver.Constants.BLANK;
 import static software.amazon.polymorph.smithygo.nameresolver.Constants.DOT;
@@ -32,6 +34,26 @@ public class DafnyNameResolver {
                                 .concat(DOT)
                                 .concat(symbol.getName());
     }
+
+    public static String getBaseDafnyType(final Shape shape, final Symbol symbol) {
+        ShapeType type = shape.getType();
+        if (shape.hasTrait(EnumTrait.class)) {
+            type = ShapeType.ENUM;
+        }
+        switch (type) {
+            case INTEGER, LONG, BOOLEAN: 
+                return symbol.getName();
+            case MAP:
+                return "dafny.Map";
+            case DOUBLE, STRING, BLOB, LIST:
+                return "dafny.Sequence";
+            case ENUM, STRUCTURE:
+                return DafnyNameResolver.getDafnyType(shape, symbol);
+            default:
+                return "";
+        }
+    }
+
     public static String getDafnySubErrorType(final Shape shape, final Symbol symbol) {
         return DafnyNameResolver.getDafnyBaseErrorType(shape)
                                 .concat("_")
