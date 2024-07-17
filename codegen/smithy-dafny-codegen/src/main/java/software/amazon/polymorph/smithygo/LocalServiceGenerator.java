@@ -28,6 +28,8 @@ import software.amazon.smithy.model.shapes.StructureShape;
 import software.amazon.smithy.model.traits.ErrorTrait;
 import software.amazon.smithy.model.traits.UnitTypeTrait;
 
+import static org.mockito.Answers.values;
+
 import java.util.Collection;
 import java.util.stream.Collectors;
 import java.util.Optional;
@@ -256,9 +258,12 @@ public class LocalServiceGenerator implements Runnable {
                     Optional<Shape> targetShapeOptional = model.getShape(targetShapeId);
                     if(targetShapeOptional.isPresent()){
                         Shape targetShape = targetShapeOptional.get();
+                        for(MemberShape i : targetShape.getAllMembers().values()){
+                            System.out.println((model.expectShape(i.getTarget())).hasTrait(DafnyUtf8BytesTrait.class));
+                        }
                         //TODO: What about UTF8Bytes in List, Map?
                         if(targetShape.isStringShape() && targetShape.hasTrait(DafnyUtf8BytesTrait.class)) {
-                            System.out.println(targetShape);
+                            System.out.println("This is it:" + targetShape);
                         }
                     }
                 }
