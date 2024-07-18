@@ -1728,49 +1728,49 @@ func (_static *CompanionStruct_Default___) TestGetConstraintWithListOfUtf8Bytes(
 	_ = _out93
 	_out93 = (client).GetConstraints(_260_input)
 	_263_ret = _out93
-	// if !((_263_ret).Is_Failure()) {
-	// 	panic("test/WrappedSimpleConstraintsTest.dfy(558,4): " + (_dafny.SeqOfString("expectation violation")).String())
-	// }
-	// var _pat_let_tv34 = _258_bad
-	// _ = _pat_let_tv34
-	// var _pat_let_tv35 = _259_good
-	// _ = _pat_let_tv35
-	// _260_input = func(_pat_let178_0 simpleconstraintsinternaldafnytypes.GetConstraintsInput) simpleconstraintsinternaldafnytypes.GetConstraintsInput {
-	// 	return func(_272_dt__update__tmp_h5 simpleconstraintsinternaldafnytypes.GetConstraintsInput) simpleconstraintsinternaldafnytypes.GetConstraintsInput {
-	// 		return func(_pat_let179_0 Wrappers.Option) simpleconstraintsinternaldafnytypes.GetConstraintsInput {
-	// 			return func(_273_dt__update_hMyListOfUtf8Bytes_h5 Wrappers.Option) simpleconstraintsinternaldafnytypes.GetConstraintsInput {
-	// 				return simpleconstraintsinternaldafnytypes.Companion_GetConstraintsInput_.Create_GetConstraintsInput_((_272_dt__update__tmp_h5).Dtor_MyString(), (_272_dt__update__tmp_h5).Dtor_NonEmptyString(), (_272_dt__update__tmp_h5).Dtor_StringLessThanOrEqualToTen(), (_272_dt__update__tmp_h5).Dtor_MyBlob(), (_272_dt__update__tmp_h5).Dtor_NonEmptyBlob(), (_272_dt__update__tmp_h5).Dtor_BlobLessThanOrEqualToTen(), (_272_dt__update__tmp_h5).Dtor_MyList(), (_272_dt__update__tmp_h5).Dtor_NonEmptyList(), (_272_dt__update__tmp_h5).Dtor_ListLessThanOrEqualToTen(), (_272_dt__update__tmp_h5).Dtor_MyMap(), (_272_dt__update__tmp_h5).Dtor_NonEmptyMap(), (_272_dt__update__tmp_h5).Dtor_MapLessThanOrEqualToTen(), (_272_dt__update__tmp_h5).Dtor_OneToTen(), (_272_dt__update__tmp_h5).Dtor_myTenToTen(), (_272_dt__update__tmp_h5).Dtor_GreaterThanOne(), (_272_dt__update__tmp_h5).Dtor_LessThanTen(), (_272_dt__update__tmp_h5).Dtor_MyUtf8Bytes(), _273_dt__update_hMyListOfUtf8Bytes_h5)
-	// 			}(_pat_let179_0)
-	// 		}(Wrappers.Companion_Option_.Create_Some_(Helpers.Companion_Default___.ForceListOfUtf8Bytes(_dafny.SeqOf(_pat_let_tv34, _pat_let_tv35))))
-	// 	}(_pat_let178_0)
-	// }(_260_input)
-	// var _out94 Wrappers.Result
-	// _ = _out94
-	// _out94 = (client).GetConstraints(_260_input)
-	// _263_ret = _out94
-	// if !((_263_ret).Is_Failure()) {
-	// 	panic("test/WrappedSimpleConstraintsTest.dfy(562,4): " + (_dafny.SeqOfString("expectation violation")).String())
-	// }
-	// var _pat_let_tv36 = _259_good
-	// _ = _pat_let_tv36
-	// var _pat_let_tv37 = _258_bad
-	// _ = _pat_let_tv37
-	// _260_input = func(_pat_let180_0 simpleconstraintsinternaldafnytypes.GetConstraintsInput) simpleconstraintsinternaldafnytypes.GetConstraintsInput {
-	// 	return func(_274_dt__update__tmp_h6 simpleconstraintsinternaldafnytypes.GetConstraintsInput) simpleconstraintsinternaldafnytypes.GetConstraintsInput {
-	// 		return func(_pat_let181_0 Wrappers.Option) simpleconstraintsinternaldafnytypes.GetConstraintsInput {
-	// 			return func(_275_dt__update_hMyListOfUtf8Bytes_h6 Wrappers.Option) simpleconstraintsinternaldafnytypes.GetConstraintsInput {
-	// 				return simpleconstraintsinternaldafnytypes.Companion_GetConstraintsInput_.Create_GetConstraintsInput_((_274_dt__update__tmp_h6).Dtor_MyString(), (_274_dt__update__tmp_h6).Dtor_NonEmptyString(), (_274_dt__update__tmp_h6).Dtor_StringLessThanOrEqualToTen(), (_274_dt__update__tmp_h6).Dtor_MyBlob(), (_274_dt__update__tmp_h6).Dtor_NonEmptyBlob(), (_274_dt__update__tmp_h6).Dtor_BlobLessThanOrEqualToTen(), (_274_dt__update__tmp_h6).Dtor_MyList(), (_274_dt__update__tmp_h6).Dtor_NonEmptyList(), (_274_dt__update__tmp_h6).Dtor_ListLessThanOrEqualToTen(), (_274_dt__update__tmp_h6).Dtor_MyMap(), (_274_dt__update__tmp_h6).Dtor_NonEmptyMap(), (_274_dt__update__tmp_h6).Dtor_MapLessThanOrEqualToTen(), (_274_dt__update__tmp_h6).Dtor_OneToTen(), (_274_dt__update__tmp_h6).Dtor_myTenToTen(), (_274_dt__update__tmp_h6).Dtor_GreaterThanOne(), (_274_dt__update__tmp_h6).Dtor_LessThanTen(), (_274_dt__update__tmp_h6).Dtor_MyUtf8Bytes(), _275_dt__update_hMyListOfUtf8Bytes_h6)
-	// 			}(_pat_let181_0)
-	// 		}(Wrappers.Companion_Option_.Create_Some_(Helpers.Companion_Default___.ForceListOfUtf8Bytes(_dafny.SeqOf(_pat_let_tv36, _pat_let_tv37))))
-	// 	}(_pat_let180_0)
-	// }(_260_input)
-	// var _out95 Wrappers.Result
-	// _ = _out95
-	// _out95 = (client).GetConstraints(_260_input)
-	// _263_ret = _out95
-	// if !((_263_ret).Is_Failure()) {
-	// 	panic("test/WrappedSimpleConstraintsTest.dfy(566,4): " + (_dafny.SeqOfString("expectation violation")).String())
-	// }
+	if !((_263_ret).Is_Failure()) {
+		panic("test/WrappedSimpleConstraintsTest.dfy(558,4): " + (_dafny.SeqOfString("expectation violation")).String())
+	}
+	var _pat_let_tv34 = _258_bad
+	_ = _pat_let_tv34
+	var _pat_let_tv35 = _259_good
+	_ = _pat_let_tv35
+	_260_input = func(_pat_let178_0 simpleconstraintsinternaldafnytypes.GetConstraintsInput) simpleconstraintsinternaldafnytypes.GetConstraintsInput {
+		return func(_272_dt__update__tmp_h5 simpleconstraintsinternaldafnytypes.GetConstraintsInput) simpleconstraintsinternaldafnytypes.GetConstraintsInput {
+			return func(_pat_let179_0 Wrappers.Option) simpleconstraintsinternaldafnytypes.GetConstraintsInput {
+				return func(_273_dt__update_hMyListOfUtf8Bytes_h5 Wrappers.Option) simpleconstraintsinternaldafnytypes.GetConstraintsInput {
+					return simpleconstraintsinternaldafnytypes.Companion_GetConstraintsInput_.Create_GetConstraintsInput_((_272_dt__update__tmp_h5).Dtor_MyString(), (_272_dt__update__tmp_h5).Dtor_NonEmptyString(), (_272_dt__update__tmp_h5).Dtor_StringLessThanOrEqualToTen(), (_272_dt__update__tmp_h5).Dtor_MyBlob(), (_272_dt__update__tmp_h5).Dtor_NonEmptyBlob(), (_272_dt__update__tmp_h5).Dtor_BlobLessThanOrEqualToTen(), (_272_dt__update__tmp_h5).Dtor_MyList(), (_272_dt__update__tmp_h5).Dtor_NonEmptyList(), (_272_dt__update__tmp_h5).Dtor_ListLessThanOrEqualToTen(), (_272_dt__update__tmp_h5).Dtor_MyMap(), (_272_dt__update__tmp_h5).Dtor_NonEmptyMap(), (_272_dt__update__tmp_h5).Dtor_MapLessThanOrEqualToTen(), (_272_dt__update__tmp_h5).Dtor_OneToTen(), (_272_dt__update__tmp_h5).Dtor_myTenToTen(), (_272_dt__update__tmp_h5).Dtor_GreaterThanOne(), (_272_dt__update__tmp_h5).Dtor_LessThanTen(), (_272_dt__update__tmp_h5).Dtor_MyUtf8Bytes(), _273_dt__update_hMyListOfUtf8Bytes_h5)
+				}(_pat_let179_0)
+			}(Wrappers.Companion_Option_.Create_Some_(Helpers.Companion_Default___.ForceListOfUtf8Bytes(_dafny.SeqOf(_pat_let_tv34, _pat_let_tv35))))
+		}(_pat_let178_0)
+	}(_260_input)
+	var _out94 Wrappers.Result
+	_ = _out94
+	_out94 = (client).GetConstraints(_260_input)
+	_263_ret = _out94
+	if !((_263_ret).Is_Failure()) {
+		panic("test/WrappedSimpleConstraintsTest.dfy(562,4): " + (_dafny.SeqOfString("expectation violation")).String())
+	}
+	var _pat_let_tv36 = _259_good
+	_ = _pat_let_tv36
+	var _pat_let_tv37 = _258_bad
+	_ = _pat_let_tv37
+	_260_input = func(_pat_let180_0 simpleconstraintsinternaldafnytypes.GetConstraintsInput) simpleconstraintsinternaldafnytypes.GetConstraintsInput {
+		return func(_274_dt__update__tmp_h6 simpleconstraintsinternaldafnytypes.GetConstraintsInput) simpleconstraintsinternaldafnytypes.GetConstraintsInput {
+			return func(_pat_let181_0 Wrappers.Option) simpleconstraintsinternaldafnytypes.GetConstraintsInput {
+				return func(_275_dt__update_hMyListOfUtf8Bytes_h6 Wrappers.Option) simpleconstraintsinternaldafnytypes.GetConstraintsInput {
+					return simpleconstraintsinternaldafnytypes.Companion_GetConstraintsInput_.Create_GetConstraintsInput_((_274_dt__update__tmp_h6).Dtor_MyString(), (_274_dt__update__tmp_h6).Dtor_NonEmptyString(), (_274_dt__update__tmp_h6).Dtor_StringLessThanOrEqualToTen(), (_274_dt__update__tmp_h6).Dtor_MyBlob(), (_274_dt__update__tmp_h6).Dtor_NonEmptyBlob(), (_274_dt__update__tmp_h6).Dtor_BlobLessThanOrEqualToTen(), (_274_dt__update__tmp_h6).Dtor_MyList(), (_274_dt__update__tmp_h6).Dtor_NonEmptyList(), (_274_dt__update__tmp_h6).Dtor_ListLessThanOrEqualToTen(), (_274_dt__update__tmp_h6).Dtor_MyMap(), (_274_dt__update__tmp_h6).Dtor_NonEmptyMap(), (_274_dt__update__tmp_h6).Dtor_MapLessThanOrEqualToTen(), (_274_dt__update__tmp_h6).Dtor_OneToTen(), (_274_dt__update__tmp_h6).Dtor_myTenToTen(), (_274_dt__update__tmp_h6).Dtor_GreaterThanOne(), (_274_dt__update__tmp_h6).Dtor_LessThanTen(), (_274_dt__update__tmp_h6).Dtor_MyUtf8Bytes(), _275_dt__update_hMyListOfUtf8Bytes_h6)
+				}(_pat_let181_0)
+			}(Wrappers.Companion_Option_.Create_Some_(Helpers.Companion_Default___.ForceListOfUtf8Bytes(_dafny.SeqOf(_pat_let_tv36, _pat_let_tv37))))
+		}(_pat_let180_0)
+	}(_260_input)
+	var _out95 Wrappers.Result
+	_ = _out95
+	_out95 = (client).GetConstraints(_260_input)
+	_263_ret = _out95
+	if !((_263_ret).Is_Failure()) {
+		panic("test/WrappedSimpleConstraintsTest.dfy(566,4): " + (_dafny.SeqOfString("expectation violation")).String())
+	}
 }
 
 // End of class Default__

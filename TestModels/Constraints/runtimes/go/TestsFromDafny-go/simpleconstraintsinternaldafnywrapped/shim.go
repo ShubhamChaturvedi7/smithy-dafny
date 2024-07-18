@@ -4,14 +4,16 @@ package simpleconstraintsinternaldafnywrapped
 
 import (
 	"context"
-    "fmt"
-    "unicode/utf8"
-    "github.com/dafny-lang/DafnyRuntimeGo/dafny"
-    // "reflect"
+	"fmt"
+	"unicode/utf8"
+
+	"github.com/dafny-lang/DafnyRuntimeGo/dafny"
+
+	// "reflect"
 
 	"github.com/Smithy-dafny/TestModels/Constraints/simpleconstraints"
-    "github.com/Smithy-dafny/TestModels/Constraints/simpleconstraintstypes"
 	"github.com/Smithy-dafny/TestModels/Constraints/simpleconstraintsinternaldafnytypes"
+	"github.com/Smithy-dafny/TestModels/Constraints/simpleconstraintstypes"
 	"github.com/dafny-lang/DafnyStandardLibGo/Wrappers"
 )
 
@@ -29,6 +31,58 @@ func WrappedSimpleConstraints(inputConfig simpleconstraintsinternaldafnytypes.Si
 	return Wrappers.Companion_Result_.Create_Success_(&Shim{client: nativeClient})
 }
 
+func validateUTFBytes(input simpleconstraintsinternaldafnytypes.GetConstraintsInput) error {
+	var errorOutput = validateUTFByte(input.Dtor_MyUtf8Bytes().UnwrapOr(nil))
+	if (errorOutput != nil) {
+		return errorOutput
+	}
+
+	var immutableArray = input.Dtor_MyListOfUtf8Bytes().UnwrapOr(nil).(*dafny.ArraySequence).ToArray()
+
+	
+	for i := uint32(0); i < immutableArray.Length(); i++ {
+		var errorOutput = validateUTFByte(immutableArray.Select(i))
+		if (errorOutput != nil) {
+			return errorOutput
+		}
+	}
+
+	// fmt.Println(input.Dtor_MyListOfUtf8Bytes().UnwrapOr(nil).(*dafny.ArraySequence).ToArray().Select(0))
+	// validateUTFByte(input.Dtor_MyListOfUtf8Bytes().UnwrapOr(nil).(*dafny.ArraySequence).ToArray().Select(0))
+	// errorOutput = validateUTFByte(input.Dtor_MyListOfUtf8Bytes().UnwrapOr(nil).(*dafny.ArraySequence).ToArray().Select(0))
+	// if (errorOutput != nil) {
+	// 	return errorOutput
+	// }
+	return nil
+}
+
+func validateUTFByte(input interface{}) error {
+	switch v := input.(type) {
+	case *dafny.ArraySequence:
+		if utf8.Valid(v.ToByteArray()) == false {
+	
+			opaqueErr := &simpleconstraintstypes.OpaqueError{
+				ErrObject: fmt.Errorf("Invalid"),
+			}
+			
+			return opaqueErr
+		}
+	case *dafny.LazySequence:
+		// fmt.Println(reflect.TypeOf(v))
+		if utf8.Valid(v.ToByteArray()) == false {
+	
+			opaqueErr := &simpleconstraintstypes.OpaqueError{
+				ErrObject: fmt.Errorf("Invalid"),
+			}
+			
+			return opaqueErr
+		}
+	default:
+		panic(fmt.Sprintf("validateUTFBytes failed: unexpected type."))
+}
+return nil
+}
+
 
 func (shim *Shim) GetConstraints(input simpleconstraintsinternaldafnytypes.GetConstraintsInput) Wrappers.Result {
 
@@ -39,29 +93,14 @@ func (shim *Shim) GetConstraints(input simpleconstraintsinternaldafnytypes.GetCo
     }()
     // fmt.Println(input.Dtor_MyUtf8Bytes().UnwrapOr(nil))
     // fmt.Println(reflect.TypeOf(input.Dtor_MyUtf8Bytes().UnwrapOr(nil)))
-    switch v := input.Dtor_MyUtf8Bytes().UnwrapOr(nil).(type) {
-        case *dafny.ArraySequence:
-			if utf8.Valid(v.ToByteArray()) == false {
-        
-				opaqueErr := &simpleconstraintstypes.OpaqueError{
-					ErrObject: fmt.Errorf("Invalid"),
-				}
-				
-				return Wrappers.Companion_Result_.Create_Failure_(simpleconstraints.Error_ToDafny(opaqueErr))
-			}
-		case *dafny.LazySequence:
-			
-            if utf8.Valid(v.ToByteArray()) == false {
-        
-				opaqueErr := &simpleconstraintstypes.OpaqueError{
-					ErrObject: fmt.Errorf("Invalid"),
-				}
-				
-				return Wrappers.Companion_Result_.Create_Failure_(simpleconstraints.Error_ToDafny(opaqueErr))
-			}
-        default:
-            panic(fmt.Sprintf("unexpected type"))
-    }
+	// fmt.Println(input.Dtor_MyUtf8Bytes().UnwrapOr(nil).(*dafny.ArraySequence).ToArray())
+    
+	var utfbytes_error = validateUTFBytes(input);
+
+	if (utfbytes_error != nil) {
+		return Wrappers.Companion_Result_.Create_Failure_(utfbytes_error)
+	}
+ 
     
     
 	var native_request = simpleconstraints.GetConstraintsInput_FromDafny(input)
