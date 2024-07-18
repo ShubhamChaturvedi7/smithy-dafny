@@ -32,7 +32,8 @@ func WrappedSimpleConstraints(inputConfig simpleconstraintsinternaldafnytypes.Si
 }
 
 func validateUTFBytes(input simpleconstraintsinternaldafnytypes.GetConstraintsInput) error {
-	var errorOutput = validateUTFByte(input.Dtor_MyUtf8Bytes().UnwrapOr(nil))
+	var errorOutput error
+	errorOutput = validateUTFByte(input.Dtor_MyUtf8Bytes().UnwrapOr(nil))
 	if (errorOutput != nil) {
 		return errorOutput
 	}
