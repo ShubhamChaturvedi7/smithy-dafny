@@ -173,7 +173,7 @@ public class GoPointableIndex implements KnowledgeIndex {
             return false;
         }
 
-        if (NUMBER_SHAPE.contains(targetShape.getType()) && !member.hasTrait(RequiredTrait.class) && !model.expectShape(member.getContainer()).isMapShape()) {
+        if (NUMBER_SHAPE.contains(targetShape.getType()) && !member.hasTrait(RequiredTrait.class) && !model.expectShape(member.getContainer()).isMapShape() && !model.expectShape(member.getContainer()).isUnionShape()) {
             return true;
         }
 

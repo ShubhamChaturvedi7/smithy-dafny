@@ -27,6 +27,7 @@ import software.amazon.smithy.model.shapes.ShapeId;
 import software.amazon.smithy.model.shapes.StructureShape;
 import software.amazon.smithy.model.traits.ErrorTrait;
 import software.amazon.smithy.model.traits.UnitTypeTrait;
+import java.util.Set;
 
 import static org.mockito.Answers.values;
 
@@ -187,6 +188,47 @@ public class LocalServiceGenerator implements Runnable {
         });
     }
 
+    void validateUTF8Bytes (Shape shape,GoWriter writer, String dataSource) {
+        // writer.write("""
+        //         var errorOutput error
+        //         errorOutput = 
+        //     """);
+        
+        
+
+            for (final var memberShapeEntry : shape.getAllMembers().entrySet()) {
+                final var memberName = memberShapeEntry.getKey();
+            final var memberShape = memberShapeEntry.getValue();
+            final var targetShape = context.model().expectShape(memberShape.getTarget());
+            final var derivedDataSource = "%1$s%2$s%3$s%4$s".formatted(dataSource,
+                                                                       ".Dtor_%s()".formatted(memberName),
+                                                                       memberShape.isOptional() ? ".UnwrapOr(nil)" : "",
+                                                                       memberShape.isOptional() && targetShape.isStructureShape() && !targetShape.hasTrait(ReferenceTrait.class) ? ".(%s)".formatted(DafnyNameResolver.getDafnyType(targetShape, context.symbolProvider().toSymbol(memberShape))) : "");
+            System.out.println(derivedDataSource);
+                // Optional<Shape> targetShapeOptional = model.getShape(targetShapeId);
+                // // System.out.println(member);
+                // if(targetShapeOptional.isPresent()){
+                //     Shape targetShape = targetShapeOptional.get();
+                //     if(targetShape.hasTrait(DafnyUtf8BytesTrait.class)) {
+                //         System.out.println(member);
+                //         System.out.println(targetShape);
+                //     }
+                //     validateUTF8Bytes(targetShape,writer);
+                    // if(targetShape.hasTrait(DafnyUtf8BytesTrait.class)) {
+                        
+                    // }
+                    // for(MemberShape i : targetShape.getAllMembers().values()){
+                    //     if(targetShape.hasTrait(DafnyUtf8BytesTrait.class)) {
+                    //         System.out.println((model.expectShape(i.getTarget())));
+                    //     }
+                    // }
+                    
+                }
+            }
+
+        
+    
+
     void generateShim() {
         final var namespace = "%swrapped".formatted(DafnyNameResolver.dafnyNamespace(service));
 
@@ -252,23 +294,8 @@ public class LocalServiceGenerator implements Runnable {
                     clientResponse = "var native_response, native_error";
                     returnResponse = "%s(*native_response)".formatted(SmithyNameResolver.getToDafnyMethodName(outputShape, ""));
                 }
-
-                for (MemberShape member : inputShape.getAllMembers().values()) {
-                    ShapeId targetShapeId = member.getTarget();
-                    Optional<Shape> targetShapeOptional = model.getShape(targetShapeId);
-                    if(targetShapeOptional.isPresent()){
-                        Shape targetShape = targetShapeOptional.get();
-                        for(MemberShape i : targetShape.getAllMembers().values()){
-                            System.out.println((model.expectShape(i.getTarget())).hasTrait(DafnyUtf8BytesTrait.class));
-                        }
-                        //TODO: What about UTF8Bytes in List, Map?
-                        if(targetShape.isStringShape() && targetShape.hasTrait(DafnyUtf8BytesTrait.class)) {
-                            System.out.println("This is it:" + targetShape);
-                        }
-                    }
-                }
+                validateUTF8Bytes(inputShape, writer, "input");
                 
-                    
                 writer.write("""
                                        func (shim *Shim) $L($L) Wrappers.Result {
                                            $L
