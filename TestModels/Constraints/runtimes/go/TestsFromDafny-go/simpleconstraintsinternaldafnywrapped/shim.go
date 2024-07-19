@@ -37,9 +37,19 @@ func validateUTFBytes(input simpleconstraintsinternaldafnytypes.GetConstraintsIn
 	if (errorOutput != nil) {
 		return errorOutput
 	}
-
+    //List can be done like this
 	var immutableArray = input.Dtor_MyListOfUtf8Bytes().UnwrapOr(nil).(*dafny.ArraySequence).ToArray()
-
+    //map like this
+    input.Dtor_MyMap().UnwrapOr(nil).(dafny.Map).Keys()
+    // What about other shape? Should we handle each and every shape?
+    // What if shape in like this
+        // Struture -> Structure -> Union -> Structure -> UTFBytes
+    // Have to replicate all the steps (From Shim/APIclient to ToNative)
+    // Can we use shapevisitor here?
+        // No, Shape visitor return string with a function that will convert the shape to native. 
+        // If we use shape visitor and convert shape to native there will be no point of validate UTF bytes.
+    // Can we use types.go?
+        // No, this has to be checked before converting to the native type (which happens first at Shim)
 	
 	for i := uint32(0); i < immutableArray.Length(); i++ {
 		var errorOutput = validateUTFByte(immutableArray.Select(i))
