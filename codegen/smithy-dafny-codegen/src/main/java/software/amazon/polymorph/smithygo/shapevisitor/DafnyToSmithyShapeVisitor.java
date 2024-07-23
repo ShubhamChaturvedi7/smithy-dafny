@@ -275,6 +275,17 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
         }
 
         var underlyingType = shape.hasTrait(DafnyUtf8BytesTrait.class) ? "uint8" : "dafny.Char";
+        var strConv = "s = s + string(val.(%s))".formatted(underlyingType);
+        if( underlyingType == "uint8" ) {
+            strConv = """
+                // UTF bytes should be always converted from bytes to string in go
+                // Otherwise go treats the string as a unicode codepoint
+                
+                var valUint, _ = val.(%s)
+                var byteSlice = []byte{valUint}
+                s = s + string(byteSlice)
+            """.formatted(underlyingType);
+        }
         return """
                 func() (*string) {
                     var s string
@@ -286,10 +297,10 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                         if !ok {
                             return &[]string{s}[0]
                         } else {
-                            s = s + string(val.(%s))
+                            %s
                         }
                    }
-               }()""".formatted(dataSource, dataSource, underlyingType);
+               }()""".formatted(dataSource, dataSource, strConv);
     }
 
     @Override
