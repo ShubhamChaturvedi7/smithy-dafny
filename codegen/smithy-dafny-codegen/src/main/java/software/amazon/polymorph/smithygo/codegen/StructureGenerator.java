@@ -201,9 +201,12 @@ public final class StructureGenerator implements Runnable {
                             }
                         """);
                     }
-                    // This call will help when structure is inside structure. 
-                    // But what about unions?
-                    renderValidatorHelper(currentShape,sortedMembers,isInputStructure, dataSource);
+                    // Add else to avoid calling renderValidatorHelper twice when currentShape is ListShape and MapShape
+                    else {
+                        // This call will help when structure is inside structure. 
+                        // But what about unions?
+                        renderValidatorHelper(currentShape,sortedMembers,isInputStructure, dataSource);
+                    }
                 });
 
     }
