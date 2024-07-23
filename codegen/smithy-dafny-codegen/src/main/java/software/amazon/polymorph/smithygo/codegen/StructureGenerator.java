@@ -17,6 +17,7 @@ package software.amazon.polymorph.smithygo.codegen;
 
 import software.amazon.polymorph.smithygo.codegen.integration.ProtocolGenerator;
 import software.amazon.polymorph.smithygo.nameresolver.SmithyNameResolver;
+import software.amazon.polymorph.traits.DafnyUtf8BytesTrait;
 import software.amazon.polymorph.traits.LocalServiceTrait;
 import software.amazon.polymorph.traits.ReferenceTrait;
 import software.amazon.smithy.codegen.core.Symbol;
@@ -137,11 +138,21 @@ public final class StructureGenerator implements Runnable {
 
     private void renderValidator(Symbol symbol, CodegenUtils.SortedMembers sortedMembers, boolean isInputStructure){
         writer.openBlock("func (input $L) Validate() (error) {", symbol.getName());
-        shape.getAllMembers().values().stream()
+
+        renderValidatorHelper( shape, sortedMembers, isInputStructure, "input");
+        
+        writer.write("return nil");
+        writer.closeBlock("}").write("");
+    }
+
+    private void renderValidatorHelper (Shape containerShape, CodegenUtils.SortedMembers sortedMembers, boolean isInputStructure, String dataSource) {
+        containerShape.getAllMembers().values().stream()
                 .filter(memberShape -> !StreamingTrait.isEventStream(model, memberShape))
                 .sorted(sortedMembers)
                 .forEach((member) -> {
-                    String memberName = symbolProvider.toMemberName(member);
+                    String memberName = dataSource + "." + symbolProvider.toMemberName(member);
+                    if (containerShape.isListShape() || containerShape.isMapShape())
+                        memberName = dataSource;
                     Symbol memberSymbol = symbolProvider.toSymbol(member);
                     if (isInputStructure) {
                         memberSymbol = memberSymbol.getProperty(SymbolUtils.INPUT_VARIANT, Symbol.class)
@@ -150,7 +161,7 @@ public final class StructureGenerator implements Runnable {
                     if (model.expectShape(member.getTarget()).hasTrait(ReferenceTrait.class)) {
                         memberSymbol = memberSymbol.getProperty("Referred", Symbol.class).get();
                     }
-                    Shape currentShape = model.expectShape(member.getTarget());             
+                    Shape currentShape = model.expectShape(member.getTarget());   
                     if (currentShape.hasTrait(RangeTrait.class)) {
                         addRangeCheck(memberSymbol, currentShape, memberName);
                     }
@@ -160,9 +171,41 @@ public final class StructureGenerator implements Runnable {
                     if (member.hasTrait(RequiredTrait.class)) {
                         addRequiredCheck(memberSymbol, currentShape, memberName);
                     }
+                    if (currentShape.hasTrait(DafnyUtf8BytesTrait.class)) {
+                        addUTFCheck(memberSymbol, currentShape, memberName);
+                    }
+                    
+                    // Broke list and map into two different if else because for _, item := range %s looked good for list
+                    // And for key, value := range %s looked good for map
+                    if (currentShape.isListShape()) {
+                        writer.write("""
+                                for _, item := range %s {
+                                    // To avoid declared and not used error for shapes which does not need validation check
+                                    _ = item
+                                """.formatted(memberName));
+                        renderValidatorHelper(currentShape,sortedMembers,isInputStructure, "item");
+                        writer.write("""
+                                }
+                                """);
+                    }
+                    else if (currentShape.isMapShape()) {
+                        writer.write("""
+                                for key, value := range %s {
+                                    // To avoid declared and not used error for shapes which does not need validation check
+                                    _ = key
+                                    _ = value
+                                """.formatted(memberName));
+                        renderValidatorHelper(currentShape,sortedMembers,isInputStructure, "key");
+                        renderValidatorHelper(currentShape,sortedMembers,isInputStructure, "value");
+                        writer.write("""
+                            }
+                        """);
+                    }
+                    // This call will help when structure is inside structure. 
+                    // But what about unions?
+                    renderValidatorHelper(currentShape,sortedMembers,isInputStructure, dataSource);
                 });
-        writer.write("return nil");
-        writer.closeBlock("}").write("");
+
     }
 
     void addRangeCheck(Symbol memberSymbol, Shape currentShape, String memberName) {
@@ -178,14 +221,14 @@ public final class StructureGenerator implements Runnable {
         
         if (pointableString.equals("*")){
             rangeCheck += """
-                    if (input.%s != nil) {
+                    if (%s != nil) {
                 """.formatted(memberName);
         }
 
         if (min.isPresent()) {
             rangeCheck += """
-                    if (%sinput.%s < %s) {
-                        return fmt.Errorf(\"%s has a minimum of %s but has the value of %%d.\", %sinput.%s)
+                    if (%s%s < %s) {
+                        return fmt.Errorf(\"%s has a minimum of %s but has the value of %%d.\", %s%s)
                     }
                     """.formatted(
                         pointableString,
@@ -198,8 +241,8 @@ public final class StructureGenerator implements Runnable {
         }
         if (max.isPresent()) {
             rangeCheck += """
-                    if (%sinput.%s > %s) {
-                        return fmt.Errorf(\"%s has a maximum of %s but has the value of %%d.\", %sinput.%s)
+                    if (%s%s > %s) {
+                        return fmt.Errorf(\"%s has a maximum of %s but has the value of %%d.\", %s%s)
                     }
                     """.formatted(
                         pointableString,
@@ -230,13 +273,14 @@ public final class StructureGenerator implements Runnable {
         }
         if (pointableString.equals("*")){
             lengthCheck += """
-                    if (input.%s != nil) {
+                    if (%s != nil) {
                 """.formatted(memberName);
         }
         if (min.isPresent()) {
-            lengthCheck += """
-                    if (len(%sinput.%s) < %s) {
-                        return fmt.Errorf(\"%s has a minimum length of %s but has the length of %%d.\", len(%sinput.%s))
+            if (currentShape.hasTrait(DafnyUtf8BytesTrait.class)) {
+                lengthCheck += """
+                    if (utf8.RuneCountInString(%s%s) < %s) {
+                        return fmt.Errorf(\"%s has a minimum length of %s but has the length of %%d.\", utf8.RuneCountInString(%s%s))
                     }
                     """.formatted(
                         pointableString,
@@ -245,12 +289,28 @@ public final class StructureGenerator implements Runnable {
                         currentShape.getId().getName(),
                         min.get().toString(),
                         pointableString,
-                        memberName);
+                        memberName);           
+            }
+            else {
+                lengthCheck += """
+                        if (len(%s%s) < %s) {
+                            return fmt.Errorf(\"%s has a minimum length of %s but has the length of %%d.\", len(%s%s))
+                        }
+                        """.formatted(
+                            pointableString,
+                            memberName,
+                            min.get().toString(),
+                            currentShape.getId().getName(),
+                            min.get().toString(),
+                            pointableString,
+                            memberName);
+            }
         }
         if (max.isPresent()) {
-            lengthCheck += """
-                    if (len(%sinput.%s) > %s) {
-                        return fmt.Errorf(\"%s has a maximum length of %s but has the length of %%d.\", len(%sinput.%s))
+            if (currentShape.hasTrait(DafnyUtf8BytesTrait.class)) {
+                lengthCheck += """
+                    if (utf8.RuneCountInString(%s%s) > %s) {
+                        return fmt.Errorf(\"%s has a maximum length of %s but has the length of %%d.\", utf8.RuneCountInString(%s%s))
                     }
                     """.formatted(
                         pointableString,
@@ -260,6 +320,21 @@ public final class StructureGenerator implements Runnable {
                         max.get().toString(),
                         pointableString,
                         memberName);
+            }
+            else {
+                lengthCheck += """
+                        if (len(%s%s) > %s) {
+                            return fmt.Errorf(\"%s has a maximum length of %s but has the length of %%d.\", len(%s%s))
+                        }
+                        """.formatted(
+                            pointableString,
+                            memberName,
+                            max.get().toString(),
+                            currentShape.getId().getName(),
+                            max.get().toString(),
+                            pointableString,
+                            memberName);
+            }
         }
         if (pointableString.equals("*")){
             lengthCheck += """
@@ -273,13 +348,41 @@ public final class StructureGenerator implements Runnable {
         String RequiredCheck = "";
         if( memberSymbol.getProperty(POINTABLE).isPresent() && (boolean) memberSymbol.getProperty(POINTABLE).get()) 
             RequiredCheck += """
-                    if (input.%s == nil) {
+                    if ( %s == nil ) {
                         return fmt.Errorf(\"%s is required but has a nil value.\")
                     }
                     """.formatted(
                     memberName,
                     memberName);
         writer.write(RequiredCheck);
+    }
+
+    void addUTFCheck(Symbol memberSymbol, Shape currentShape, String memberName) {
+        String pointableString = "";
+        String UTFCheck = "";
+        if ((boolean) memberSymbol.getProperty(POINTABLE).orElse(false) == true){
+            pointableString = "*";
+        }
+        if (pointableString.equals("*")){
+            UTFCheck += """
+                    if ( %s != nil ) {
+                """.formatted(memberName);
+        }
+        UTFCheck += """
+                    if (!utf8.ValidString(%s%s)) {
+                        return fmt.Errorf(\"Invalid UTF bytes %%s \", %s%s)
+                    }
+                    """.formatted(
+                        pointableString,
+                        memberName,
+                        pointableString,
+                        memberName);
+        if (pointableString.equals("*")){
+            UTFCheck += """
+                }
+                """;
+        }
+        writer.write(UTFCheck);
     }
 
     /**
