@@ -1,35 +1,44 @@
-package software.amazon.polymorph.smithygo.codegen;
+package software.amazon.polymorph.smithygo.awssdk;
 
+import software.amazon.polymorph.smithygo.codegen.GenerationContext;
+import software.amazon.polymorph.smithygo.codegen.GoSettings;
+import software.amazon.polymorph.smithygo.codegen.GoWriter;
 import software.amazon.polymorph.smithygo.codegen.integration.GoIntegration;
-import software.amazon.polymorph.smithygo.nameresolver.SmithyNameResolver;
+import software.amazon.polymorph.smithygo.localservice.nameresolver.SmithyNameResolver;
 import software.amazon.smithy.build.PluginContext;
 import software.amazon.smithy.build.SmithyBuildPlugin;
 import software.amazon.smithy.codegen.core.directed.CodegenDirector;
 
 import java.util.Map;
 
-public class GoClientCodegenPlugin implements SmithyBuildPlugin {
+public class DafnyGoAwsSdkClientCodegenPlugin implements SmithyBuildPlugin {
 
-    public GoClientCodegenPlugin(final Map<String, String> smithyNamespaceToPythonModuleNameMap) {
+    public DafnyGoAwsSdkClientCodegenPlugin(final Map<String, String> smithyNamespaceToPythonModuleNameMap) {
         super();
         SmithyNameResolver.setSmithyNamespaceToGoModuleNameMap(smithyNamespaceToPythonModuleNameMap);
     }
+
+    @Override
+    public String getName() {
+        return "dafny-go-aws-sdk-client-codegen";    }
+
     public void run(PluginContext context) {
         CodegenDirector<GoWriter, GoIntegration, GenerationContext, GoSettings> runner
                 = new CodegenDirector<>();
 
-        runner.directedCodegen(new DirectedGoCodegen());
+        runner.directedCodegen(new DafnyGoAwsSdkDirectedCodegen());
 
         // Set the SmithyIntegration class to look for and apply using SPI.
         runner.integrationClass(GoIntegration.class);
 
         // Set the FileManifest and Model from the plugin.
         runner.fileManifest(context.getFileManifest());
-        runner.model(context.getModel());
 
         // Create the GoSettings object from the plugin settings.
         GoSettings settings = GoSettings.from(context.getSettings());
         runner.settings(settings);
+
+        runner.model(context.getModel());
 
         runner.service(settings.getService());
 
@@ -42,11 +51,6 @@ public class GoClientCodegenPlugin implements SmithyBuildPlugin {
 
         // Run it!
         runner.run();
-    }
-
-    @Override
-    public String getName() {
-        return "go-client-codegen";
     }
 
     @Override
