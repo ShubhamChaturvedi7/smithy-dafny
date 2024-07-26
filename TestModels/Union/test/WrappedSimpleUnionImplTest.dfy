@@ -19,6 +19,7 @@ module WrappedSimpleUnionTest {
         SimpleUnionImplTest.TestMyUnionLong(client);
         SimpleUnionImplTest.TestMyUnionStructure(client);
         SimpleUnionImplTest.TestKnownValueUnionString(client);
+        SimpleUnionImplTest.TestMyUnioninsideMyUnion(client);
 
     }
 }

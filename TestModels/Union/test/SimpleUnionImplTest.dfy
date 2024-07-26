@@ -202,6 +202,29 @@ module SimpleUnionImplTest {
         expect ret.union.value.ListValue? == false;
     }
 
+    method TestMyUnioninsideMyUnion(client: ISimpleUnionClient)
+      requires client.ValidState()
+      modifies client.Modifies
+      ensures client.ValidState()
+    {
+        var s: seq<UInt.uint8> := [0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7];
+        var InsideMyUnionValue := MyDouble(s);
+        var ret :- expect client.GetUnion(GetUnionInput(union := Some(InsideMyUnion(InsideMyUnionValue))));
+
+        expect ret.union.Some?;
+        expect ret.union.value.InsideMyUnion?;
+        expect ret.union.value.InsideMyUnion == InsideMyUnionValue;
+        expect ret.union.value.IntegerValue? == false;
+        expect ret.union.value.StringValue? == false;
+        expect ret.union.value.DoubleValue? == false;
+        expect ret.union.value.LongValue? == false;
+        expect ret.union.value.BooleanValue? == false;
+        expect ret.union.value.BlobValue? == false;
+        expect ret.union.value.MapValue? == false;
+        expect ret.union.value.ListValue? == false;
+        expect ret.union.value.StructureValue? == false;
+    }
+
     method TestKnownValueUnionString(client: ISimpleUnionClient)
       requires client.ValidState()
       modifies client.Modifies

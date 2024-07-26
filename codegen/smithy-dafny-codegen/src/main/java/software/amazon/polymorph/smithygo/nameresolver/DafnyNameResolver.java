@@ -47,7 +47,7 @@ public class DafnyNameResolver {
                 return "dafny.Map";
             case DOUBLE, STRING, BLOB, LIST:
                 return "dafny.Sequence";
-            case ENUM, STRUCTURE:
+            case ENUM, STRUCTURE, UNION:
                 return DafnyNameResolver.getDafnyType(shape, symbol);
             default:
                 return "";

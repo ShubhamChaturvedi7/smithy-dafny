@@ -35,9 +35,13 @@ union MyUnion {
     LongValue: Long,
     ListValue: SimpleStringList,
     MapValue: SimpleMap,
-    StructureValue: SimpleStruture
+    StructureValue: SimpleStruture,
+    InsideMyUnion: InsideMyUnion
 }
 
+union InsideMyUnion {
+  MyDouble: Double
+}
 structure SimpleStruture {
   Intvalue: Integer
 }
