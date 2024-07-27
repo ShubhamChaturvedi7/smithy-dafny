@@ -8,6 +8,7 @@ import software.amazon.polymorph.smithygo.localservice.nameresolver.SmithyNameRe
 import software.amazon.polymorph.traits.DafnyUtf8BytesTrait;
 import software.amazon.polymorph.traits.ReferenceTrait;
 import software.amazon.smithy.codegen.core.CodegenException;
+import software.amazon.smithy.codegen.core.Symbol;
 import software.amazon.smithy.model.shapes.BlobShape;
 import software.amazon.smithy.model.shapes.BooleanShape;
 import software.amazon.smithy.model.shapes.DoubleShape;
@@ -165,7 +166,11 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
 
         MemberShape memberShape = shape.getMember();
         final Shape targetShape = context.model().expectShape(memberShape.getTarget());
-        final var typeName = targetShape.isStructureShape() ? context.symbolProvider().toSymbol(memberShape) : context.symbolProvider().toSymbol(memberShape);
+        var typeName = targetShape.isStructureShape() ? context.symbolProvider().toSymbol(memberShape) : context.symbolProvider().toSymbol(memberShape);
+        // TODO: override symbolvisitor?
+        if (targetShape.hasTrait(DafnyUtf8BytesTrait.class)) {
+            typeName = Symbol.builder().name("string").namespace("smithyapitypes", "").build();
+        }
         builder.append("""
                        func() []%s{
                        var fieldValue []%s
@@ -178,8 +183,7 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
 				break
 			}
 			fieldValue = append(fieldValue, %s%s)}
-            // TODO: Why did Shubham changed typeName?
-			""".formatted(typeName, typeName, dataSource, dataSource,
+			""".formatted(SmithyNameResolver.getSmithyType(shape, typeName), SmithyNameResolver.getSmithyType(shape, typeName), dataSource, dataSource,
                 targetShape.isStructureShape() ? "" : "*",
                 targetShape.accept(
                         new DafnyToSmithyShapeVisitor(context, "val%s".formatted(targetShape.isStructureShape() ? ".(%s)".formatted(DafnyNameResolver.getDafnyType(targetShape, context.symbolProvider().toSymbol(targetShape))) : ""), writer, isConfigShape)
