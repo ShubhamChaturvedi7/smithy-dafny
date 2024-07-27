@@ -1,29 +1,16 @@
-package software.amazon.polymorph.smithygo.shapevisitor;
-
-import java.lang.annotation.Target;
-import java.util.Map;
-import java.util.Map.Entry;
+package software.amazon.polymorph.smithygo.localservice.shapevisitor;
 
 import software.amazon.polymorph.smithygo.codegen.GenerationContext;
 import software.amazon.polymorph.smithygo.codegen.GoWriter;
 import software.amazon.polymorph.smithygo.codegen.SmithyGoDependency;
-import software.amazon.polymorph.smithygo.codegen.knowledge.GoPointableIndex;
-import software.amazon.polymorph.smithygo.nameresolver.DafnyNameResolver;
-import software.amazon.polymorph.smithygo.nameresolver.SmithyNameResolver;
+import software.amazon.polymorph.smithygo.localservice.nameresolver.DafnyNameResolver;
+import software.amazon.polymorph.smithygo.localservice.nameresolver.SmithyNameResolver;
 import software.amazon.polymorph.traits.DafnyUtf8BytesTrait;
 import software.amazon.polymorph.traits.ReferenceTrait;
 import software.amazon.smithy.codegen.core.CodegenException;
-import software.amazon.smithy.codegen.core.Symbol;
-import software.amazon.smithy.codegen.core.SymbolProvider;
-import software.amazon.smithy.model.Model;
-import software.amazon.smithy.model.shapes.BigDecimalShape;
-import software.amazon.smithy.model.shapes.BigIntegerShape;
 import software.amazon.smithy.model.shapes.BlobShape;
 import software.amazon.smithy.model.shapes.BooleanShape;
-import software.amazon.smithy.model.shapes.ByteShape;
 import software.amazon.smithy.model.shapes.DoubleShape;
-import software.amazon.smithy.model.shapes.EnumShape;
-import software.amazon.smithy.model.shapes.FloatShape;
 import software.amazon.smithy.model.shapes.IntegerShape;
 import software.amazon.smithy.model.shapes.ListShape;
 import software.amazon.smithy.model.shapes.LongShape;
@@ -33,14 +20,12 @@ import software.amazon.smithy.model.shapes.ResourceShape;
 import software.amazon.smithy.model.shapes.ServiceShape;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeVisitor;
-import software.amazon.smithy.model.shapes.ShortShape;
 import software.amazon.smithy.model.shapes.StringShape;
 import software.amazon.smithy.model.shapes.StructureShape;
 import software.amazon.smithy.model.shapes.TimestampShape;
 import software.amazon.smithy.model.shapes.UnionShape;
 import software.amazon.smithy.model.traits.EnumTrait;
 import software.amazon.smithy.model.traits.ErrorTrait;
-import software.amazon.smithy.utils.CaseUtils;
 import software.amazon.smithy.utils.StringUtils;
 
 import static software.amazon.polymorph.smithygo.codegen.SymbolUtils.POINTABLE;
@@ -52,7 +37,11 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
     private final boolean isConfigShape;
 
     private final boolean isOptional;
-    private final boolean isPointerType;
+    protected boolean isPointerType;
+
+    public void setPointerType() {
+        this.isPointerType = false;
+    }
 
     public SmithyToDafnyShapeVisitor(
             final GenerationContext context,
@@ -338,7 +327,7 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
                     		}
                     	}
                     	return %s
-                    }()""".formatted(returnType, nilCheck, dataSource, dereferenceIfRequired, dataSource, DafnyNameResolver.getDafnyCompanionStructType(shape, context.symbolProvider().toSymbol(shape)), someWrapIfRequired.formatted("enum"));
+                    }()""".formatted(returnType, nilCheck, dataSource, dereferenceIfRequired, dataSource, DafnyNameResolver.getDafnyCompanionStructType(shape, context.symbolProvider().toSymbol(shape)), someWrapIfRequired.formatted("enum.(%s)".formatted(DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape)))));
         } else {
             String nilWrapIfRequired = "nil";
             String someWrapIfRequired = "%s";
@@ -475,39 +464,34 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
             String memberName = context.symbolProvider().toMemberName(member);
             String createMemberFunction = memberName.replace(shape.getId().getName() + "Member", "Create_")+"_";
             Shape targetShape = context.model().expectShape(member.getTarget());
-            if(targetShape.isIntegerShape()){
-                returnString += """
-                                case *%s.%s:
-                                    var companion = %s
-                                    return Wrappers.Companion_Option_.Create_Some_(companion.%s(%s.(*%s.%s).Value))
-                            """.formatted(
-                                SmithyNameResolver.smithyTypesNamespace(shape),
-                                context.symbolProvider().toMemberName(member),
-                                internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
-                                createMemberFunction,
-                                dataSource,
-                                SmithyNameResolver.smithyTypesNamespace(shape),
-                                context.symbolProvider().toMemberName(member)
-                            );
-            }
-            else if(targetShape.isStringShape()){
-                var underlyingType = "dafny.SeqOfChars([]dafny.Char((%s.(*%s.%s)).Value)...)".formatted(dataSource,SmithyNameResolver.smithyTypesNamespace(shape),context.symbolProvider().toMemberName(member));
-                returnString += """
-                                case *%s.%s:
-                                    var companion = %s
-                                    return Wrappers.Companion_Option_.Create_Some_(companion.%s(%s))
-                            """.formatted(
-                                SmithyNameResolver.smithyTypesNamespace(shape),
-                                context.symbolProvider().toMemberName(member),
-                                internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
-                                createMemberFunction,
-                                underlyingType
-                            );
-            }
+            String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(companion.%s(%s))";
+            returnString += """
+                    case *%s.%s:
+                        var companion = %s
+                        var inputToConversion = %s
+                    """.formatted(
+                            SmithyNameResolver.smithyTypesNamespace(shape),
+                            context.symbolProvider().toMemberName(member),
+                            internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
+                            targetShape.accept(
+                                    new SmithyToDafnyShapeVisitor(
+                                        context,dataSource + ".(*" + SmithyNameResolver.smithyTypesNamespace(shape) + "." + context.symbolProvider().toMemberName(member) + ").Value", writer, isConfigShape, true, false
+                                    )
+                                )
+                        );
+            String baseType = DafnyNameResolver.getBaseDafnyType(targetShape,context.symbolProvider().toSymbol(targetShape));
+            returnString += """
+                    return %s
+                """.formatted(
+                    someWrapIfRequired.formatted(
+                        createMemberFunction,
+                        "inputToConversion.UnwrapOr(nil)%s".formatted(baseType != "" ? ".(" + baseType + ")" : "")
+                    )
+                );
         }
         returnString += """
                         default:
-				            panic("unhandled union type")
+				            panic("Unhandled union type")
                     }
                 }()""";
         return returnString;
@@ -515,6 +499,6 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
 
     @Override
     public String timestampShape(TimestampShape shape) {
-        return "Timestampppppp";
+        return "Wrappers.Companion_Option_.Create_None_()";
     }
 }
