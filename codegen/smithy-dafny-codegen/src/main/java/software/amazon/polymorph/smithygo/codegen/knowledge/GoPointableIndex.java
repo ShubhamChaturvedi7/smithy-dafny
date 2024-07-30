@@ -99,8 +99,13 @@ public class GoPointableIndex implements KnowledgeIndex {
             ShapeType.BIG_INTEGER
     );
 
-    // All types types that are comparable to nil
-    private static final Set<ShapeType> NUMBER_SHAPE = SetUtils.of(
+    // Pointer types that are strictly pointer type even if it has required trait
+    private static final Set<ShapeType> STRICT_POINTER_TYPE = SetUtils.of(
+        ShapeType.STRING
+    );
+
+    // All the known pointer type if not required
+    private static final Set<ShapeType> KNOWN_POINTER_TYPE = SetUtils.of(
             ShapeType.BYTE,
             ShapeType.SHORT,
             ShapeType.INTEGER,
@@ -163,7 +168,6 @@ public class GoPointableIndex implements KnowledgeIndex {
     }
 
     private boolean isMemberPointable(MemberShape member, Shape targetShape) {
-
         // Streamed blob shapes are never pointers because they are interfaces
         if (isBlobStream(targetShape)) {
             return false;
@@ -173,7 +177,16 @@ public class GoPointableIndex implements KnowledgeIndex {
             return false;
         }
 
-        if (NUMBER_SHAPE.contains(targetShape.getType()) && !member.hasTrait(RequiredTrait.class) && !model.expectShape(member.getContainer()).isMapShape()) {
+        if (INHERENTLY_POINTABLE.contains(targetShape.getType())) {
+            return true;
+        }
+
+        //if membershape is required return it is not pointable
+        if (member.hasTrait(RequiredTrait.class) && !STRICT_POINTER_TYPE.contains(targetShape.getType())) {
+            return false;
+        }
+
+        if (KNOWN_POINTER_TYPE.contains(targetShape.getType()) && !model.expectShape(member.getContainer()).isMapShape()) {
             return true;
         }
 
