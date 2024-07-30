@@ -145,7 +145,8 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                                                                        ".Dtor_%s()".formatted(memberName),
                                                                        memberShape.isOptional() ? ".UnwrapOr(nil)" : "",
                                                                        memberShape.isOptional() && targetShape.isStructureShape() && !targetShape.hasTrait(ReferenceTrait.class) ? ".(%s)".formatted(DafnyNameResolver.getDafnyType(targetShape, context.symbolProvider().toSymbol(memberShape))) : "");
-                builder.append("%1$s: %2$s%3$s,".formatted(
+            System.out.println(derivedDataSource);    
+            builder.append("%1$s: %2$s%3$s,".formatted(
                         StringUtils.capitalize(memberName),
                         targetShape.isStructureShape() && !targetShape.hasTrait(ReferenceTrait.class) ? "&" : "",
                         targetShape.accept(
@@ -366,6 +367,7 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
             Shape targetShape = context.model().expectShape(member.getTarget());
             String memberName = context.symbolProvider().toMemberName(member);
             String rawUnionDataSource = "(" + dataSource + ".(" + DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape)) + "))";
+            // unwrap union type, assert it then convert it to its member type with Dtor_ (example: Dtor_BlobValue()). unionDataSource is not a wrapper object until now.
             String unionDataSource = rawUnionDataSource + ".Dtor_" + memberName.replace(shape.getId().getName() + "Member", "") + "()";
             String pointerForPointableShape = (boolean)this.context.symbolProvider().toSymbol(targetShape).getProperty(POINTABLE).orElse(false) && !targetShape.isStructureShape() ? "*" : "";
             returnString += """
