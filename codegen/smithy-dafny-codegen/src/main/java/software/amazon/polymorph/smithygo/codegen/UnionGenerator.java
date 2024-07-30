@@ -17,8 +17,6 @@ import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.traits.ErrorTrait;
 
 public class UnionGenerator {
-    public static final String UNKNOWN_MEMBER_NAME = "UnknownUnionMember";
-
     private final Model model;
     private final SymbolProvider symbolProvider;
     private final UnionShape shape;
