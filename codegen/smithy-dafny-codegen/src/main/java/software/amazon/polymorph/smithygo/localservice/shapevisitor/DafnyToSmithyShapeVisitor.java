@@ -145,7 +145,6 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                                                                        ".Dtor_%s()".formatted(memberName),
                                                                        memberShape.isOptional() ? ".UnwrapOr(nil)" : "",
                                                                        memberShape.isOptional() && targetShape.isStructureShape() && !targetShape.hasTrait(ReferenceTrait.class) ? ".(%s)".formatted(DafnyNameResolver.getDafnyType(targetShape, context.symbolProvider().toSymbol(memberShape))) : "");
-            System.out.println(derivedDataSource);    
             builder.append("%1$s: %2$s%3$s,".formatted(
                         StringUtils.capitalize(memberName),
                         targetShape.isStructureShape() && !targetShape.hasTrait(ReferenceTrait.class) ? "&" : "",
@@ -369,7 +368,8 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
             String rawUnionDataSource = "(" + dataSource + ".(" + DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape)) + "))";
             // unwrap union type, assert it then convert it to its member type with Dtor_ (example: Dtor_BlobValue()). unionDataSource is not a wrapper object until now.
             String unionDataSource = rawUnionDataSource + ".Dtor_" + memberName.replace(shape.getId().getName() + "Member", "") + "()";
-            String pointerForPointableShape = (boolean)this.context.symbolProvider().toSymbol(targetShape).getProperty(POINTABLE).orElse(false) && !targetShape.isStructureShape() ? "*" : "";
+            Boolean isMemberShapePointable = (boolean)this.context.symbolProvider().toSymbol(targetShape).getProperty(POINTABLE).orElse(false);
+            String pointerForPointableShape = isMemberShapePointable ? "*" : "";
             returnString += """
                         if ((%s).%s()) {
                     """.formatted(
@@ -395,7 +395,7 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                             memberName,
                             pointerForPointableShape,
                             targetShape.accept(
-                                    new DafnyToSmithyShapeVisitor(context, unionDataSource, writer, isConfigShape)
+                                    new DafnyToSmithyShapeVisitor(context, unionDataSource, writer, isConfigShape, isMemberShapePointable)
                                 ));
         }
         returnString += """
