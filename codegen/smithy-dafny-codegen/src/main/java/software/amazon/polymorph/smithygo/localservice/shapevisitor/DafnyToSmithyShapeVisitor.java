@@ -3,6 +3,7 @@ package software.amazon.polymorph.smithygo.localservice.shapevisitor;
 import software.amazon.polymorph.smithygo.codegen.GenerationContext;
 import software.amazon.polymorph.smithygo.codegen.GoWriter;
 import software.amazon.polymorph.smithygo.codegen.SmithyGoDependency;
+import software.amazon.polymorph.smithygo.codegen.knowledge.GoPointableIndex;
 import software.amazon.polymorph.smithygo.localservice.nameresolver.DafnyNameResolver;
 import software.amazon.polymorph.smithygo.localservice.nameresolver.SmithyNameResolver;
 import software.amazon.polymorph.traits.DafnyUtf8BytesTrait;
@@ -368,7 +369,7 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
             String rawUnionDataSource = "(" + dataSource + ".(" + DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape)) + "))";
             // unwrap union type, assert it then convert it to its member type with Dtor_ (example: Dtor_BlobValue()). unionDataSource is not a wrapper object until now.
             String unionDataSource = rawUnionDataSource + ".Dtor_" + memberName.replace(shape.getId().getName() + "Member", "") + "()";
-            Boolean isMemberShapePointable = (boolean)this.context.symbolProvider().toSymbol(targetShape).getProperty(POINTABLE).orElse(false);
+            Boolean isMemberShapePointable = GoPointableIndex.of(context.model()).isPointable(targetShape) && GoPointableIndex.of(context.model()).isDereferencable(targetShape);
             String pointerForPointableShape = isMemberShapePointable ? "*" : "";
             returnString += """
                         if ((%s).%s()) {

@@ -29,9 +29,6 @@ import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.ShapeId;
 import software.amazon.smithy.model.shapes.ShapeType;
 import software.amazon.smithy.model.shapes.ToShapeId;
-import software.amazon.smithy.model.traits.AddedDefaultTrait;
-import software.amazon.smithy.model.traits.ClientOptionalTrait;
-import software.amazon.smithy.model.traits.DefaultTrait;
 import software.amazon.smithy.model.traits.EnumTrait;
 import software.amazon.smithy.model.traits.RequiredTrait;
 import software.amazon.smithy.model.traits.StreamingTrait;
@@ -76,6 +73,7 @@ public class GoPointableIndex implements KnowledgeIndex {
             // Interfaces
             ShapeType.UNION,
             ShapeType.DOCUMENT,
+            ShapeType.STRUCTURE,
 
             // known pointer types.
             ShapeType.BIG_DECIMAL,
