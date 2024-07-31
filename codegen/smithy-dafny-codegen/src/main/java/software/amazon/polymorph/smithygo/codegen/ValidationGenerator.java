@@ -8,6 +8,7 @@ import software.amazon.polymorph.traits.ReferenceTrait;
 import software.amazon.smithy.codegen.core.Symbol;
 import software.amazon.smithy.codegen.core.SymbolProvider;
 import software.amazon.smithy.model.Model;
+import software.amazon.smithy.model.shapes.MemberShape;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.traits.LengthTrait;
 import software.amazon.smithy.model.traits.RangeTrait;
@@ -23,7 +24,12 @@ public class ValidationGenerator {
     private final Symbol symbol;
     private final SymbolProvider symbolProvider;
     private final GoWriter writer;
-    
+
+    // This strings are used for list and map
+    private static final String LIST_ITEM = "item";
+    private static final String MAP_KEY = "key";
+    private static final String MAP_VALUE = "value";
+
     public ValidationGenerator(
         Model model,
         Shape shape,
@@ -50,80 +56,108 @@ public class ValidationGenerator {
                 .filter(memberShape -> !StreamingTrait.isEventStream(model, memberShape))
                 .sorted(sortedMembers)
                 .forEach((member) -> {
-                    String memberName = dataSource + "." + symbolProvider.toMemberName(member);
+                    String memberName;
                     if (containerShape.isListShape() || containerShape.isMapShape())
                         memberName = dataSource;
-                    Symbol memberSymbol = symbolProvider.toSymbol(member);
+                    else 
+                        memberName = dataSource + "." + symbolProvider.toMemberName(member);
+                    
+                    renderValidatorForEachShape(model.expectShape(member.getTarget()), sortedMembers, isInputStructure, memberName);
+                });
+    }
+
+    private void renderValidatorForEachShape (Shape currentShape, CodegenUtils.SortedMembers sortedMembers, boolean isInputStructure, String dataSource) {
+                    
+                    Symbol memberSymbol = symbolProvider.toSymbol(currentShape);
                     if (isInputStructure) {
                         memberSymbol = memberSymbol.getProperty(SymbolUtils.INPUT_VARIANT, Symbol.class)
                                 .orElse(memberSymbol);
                     }
-                    if (model.expectShape(member.getTarget()).hasTrait(ReferenceTrait.class)) {
+                    if (currentShape.hasTrait(ReferenceTrait.class)) {
                         memberSymbol = memberSymbol.getProperty("Referred", Symbol.class).get();
-                    }
-                    Shape currentShape = model.expectShape(member.getTarget());   
+                    } 
                     if (currentShape.hasTrait(RangeTrait.class)) {
-                        addRangeCheck(memberSymbol, currentShape, memberName);
+                        addRangeCheck(memberSymbol, currentShape, dataSource);
                     }
                     if (currentShape.hasTrait(LengthTrait.class)) {
-                        addLengthCheck(memberSymbol, currentShape, memberName);
+                        addLengthCheck(memberSymbol, currentShape, dataSource);
                     }
-                    if (member.hasTrait(RequiredTrait.class)) {
-                        addRequiredCheck(memberSymbol, currentShape, memberName);
+                    if (currentShape.hasTrait(RequiredTrait.class)) {
+                        addRequiredCheck(memberSymbol, currentShape, dataSource);
                     }
                     if (currentShape.hasTrait(DafnyUtf8BytesTrait.class)) {
-                        addUTFCheck(memberSymbol, currentShape, memberName);
+                        addUTFCheck(memberSymbol, currentShape, dataSource);
                     }
                     // Broke list and map into two different if else because for _, item := range %s looked good for list
                     // And for key, value := range %s looked good for map
                     if (currentShape.isListShape()) {
                         writer.write("""
-                                for _, item := range %s {
+                                for _, %s := range %s {
                                     // To avoid declared and not used error for shapes which does not need validation check
                                     _ = item
-                                """.formatted(memberName));
-                        renderValidatorHelper(currentShape,sortedMembers,isInputStructure, "item");
+                                """.formatted(LIST_ITEM, dataSource));
+                        renderValidatorHelper(currentShape,sortedMembers,isInputStructure, LIST_ITEM);
                         writer.write("""
                                 }
                                 """);
                     }
                     else if (currentShape.isMapShape()) {
                         writer.write("""
-                                for key, value := range %s {
+                                for %s, %s := range %s {
                                     // To avoid declared and not used error for shapes which does not need validation check
                                     _ = key
                                     _ = value
-                                """.formatted(memberName));
-                        renderValidatorHelper(currentShape,sortedMembers,isInputStructure, "key");
-                        renderValidatorHelper(currentShape,sortedMembers,isInputStructure, "value");
+                                """.formatted(MAP_KEY, MAP_VALUE, dataSource));
+                        renderValidatorHelper(currentShape,sortedMembers,isInputStructure, MAP_KEY);
+                        renderValidatorHelper(currentShape,sortedMembers,isInputStructure, MAP_VALUE);
                         writer.write("""
                             }
                         """);
                     }
-                    // Add else to avoid calling renderValidatorHelper twice when currentShape is ListShape and MapShape
+                    else if (currentShape.isUnionShape()) {
+                        writer.write("""
+                            switch unionType := %s.(type) {
+                                """.formatted(dataSource));
+                        for (var memberInUnion : currentShape.getAllMembers().values()) {
+                            writer.write("""
+                                    case *%s:
+                                    """.formatted(
+                                        symbolProvider.toMemberName(memberInUnion)
+                                        ));
+                                    
+                            renderValidatorForEachShape(model.expectShape(memberInUnion.getTarget()), sortedMembers, isInputStructure, "unionType.Value");
+                        }
+                        writer.write("""
+                                // Default case should not be reached. 
+                                default:
+                                    // To avoid used and not used error when nothing to validate
+                                    _ = unionType
+				                    panic("Unhandled union type")
+                                }
+                                    """);
+                    }
                     else {
                         // This call will help when structure is inside structure. 
                         // But what about unions?
                         renderValidatorHelper(currentShape,sortedMembers,isInputStructure, dataSource);
                     }
-                });
     }
 
-    private void addRangeCheck(Symbol memberSymbol, Shape currentShape, String memberName) {
+    private void addRangeCheck(Symbol memberSymbol, Shape currentShape, String dataSource) {
         String pointableString = "";
         String rangeCheck = "";
         RangeTrait rangeTraitShape = currentShape.expectTrait(RangeTrait.class);
         Optional<BigDecimal> min = rangeTraitShape.getMin();
         Optional<BigDecimal> max = rangeTraitShape.getMax();
-
-        if ((boolean) memberSymbol.getProperty(POINTABLE).orElse(false) == true){
-            pointableString = "*";
+        if (!(dataSource.equals(LIST_ITEM) || dataSource.equals(MAP_KEY) || dataSource.equals(MAP_VALUE))) {
+            if ((boolean) memberSymbol.getProperty(POINTABLE, Boolean.class).orElse(false)){
+                pointableString = "*";
+            }
         }
-        
         if (pointableString.equals("*")){
             rangeCheck += """
                     if (%s != nil) {
-                """.formatted(memberName);
+                """.formatted(dataSource);
         }
 
         if (min.isPresent()) {
@@ -133,12 +167,12 @@ public class ValidationGenerator {
                     }
                     """.formatted(
                         pointableString,
-                        memberName,
+                        dataSource,
                         min.get().toString(),
                         currentShape.getId().getName(),
                         min.get().toString(),
                         pointableString,
-                        memberName);
+                        dataSource);
         }
         if (max.isPresent()) {
             rangeCheck += """
@@ -147,12 +181,12 @@ public class ValidationGenerator {
                     }
                     """.formatted(
                         pointableString,
-                        memberName,
+                        dataSource,
                         max.get().toString(),
                         currentShape.getId().getName(),
                         max.get().toString(),
                         pointableString,
-                        memberName);
+                        dataSource);
         }
         if (pointableString.equals("*")){
             rangeCheck += """
@@ -163,19 +197,22 @@ public class ValidationGenerator {
         
     }
 
-    private void addLengthCheck(Symbol memberSymbol, Shape currentShape, String memberName) {
+    private void addLengthCheck(Symbol memberSymbol, Shape currentShape, String dataSource) {
         String pointableString = "";
         String lengthCheck = "";
         LengthTrait lengthTraitShape = currentShape.expectTrait(LengthTrait.class);
         Optional<Long> min = lengthTraitShape.getMin();
         Optional<Long> max = lengthTraitShape.getMax();
-        if ((boolean) memberSymbol.getProperty(POINTABLE).orElse(false) == true){
-            pointableString = "*";
+        System.out.println(memberSymbol.getProperties());
+        if (!(dataSource.equals(LIST_ITEM) || dataSource.equals(MAP_KEY) || dataSource.equals(MAP_VALUE))) {
+            if ((boolean) memberSymbol.getProperty(POINTABLE, Boolean.class).orElse(false)){
+                pointableString = "*";
+            }
         }
         if (pointableString.equals("*")){
             lengthCheck += """
                     if (%s != nil) {
-                """.formatted(memberName);
+                """.formatted(dataSource);
         }
         if (min.isPresent()) {
             if (currentShape.hasTrait(DafnyUtf8BytesTrait.class)) {
@@ -185,12 +222,12 @@ public class ValidationGenerator {
                     }
                     """.formatted(
                         pointableString,
-                        memberName,
+                        dataSource,
                         min.get().toString(),
                         currentShape.getId().getName(),
                         min.get().toString(),
                         pointableString,
-                        memberName);           
+                        dataSource);           
             }
             else {
                 lengthCheck += """
@@ -199,12 +236,12 @@ public class ValidationGenerator {
                         }
                         """.formatted(
                             pointableString,
-                            memberName,
+                            dataSource,
                             min.get().toString(),
                             currentShape.getId().getName(),
                             min.get().toString(),
                             pointableString,
-                            memberName);
+                            dataSource);
             }
         }
         if (max.isPresent()) {
@@ -215,12 +252,12 @@ public class ValidationGenerator {
                     }
                     """.formatted(
                         pointableString,
-                        memberName,
+                        dataSource,
                         max.get().toString(),
                         currentShape.getId().getName(),
                         max.get().toString(),
                         pointableString,
-                        memberName);
+                        dataSource);
             }
             else {
                 lengthCheck += """
@@ -229,12 +266,12 @@ public class ValidationGenerator {
                         }
                         """.formatted(
                             pointableString,
-                            memberName,
+                            dataSource,
                             max.get().toString(),
                             currentShape.getId().getName(),
                             max.get().toString(),
                             pointableString,
-                            memberName);
+                            dataSource);
             }
         }
         if (pointableString.equals("*")){
@@ -245,7 +282,7 @@ public class ValidationGenerator {
         writer.write(lengthCheck);
     }
 
-    private void addRequiredCheck(Symbol memberSymbol, Shape currentShape, String memberName) {
+    private void addRequiredCheck(Symbol memberSymbol, Shape currentShape, String dataSource) {
         String RequiredCheck = "";
         if( memberSymbol.getProperty(POINTABLE).isPresent() && (boolean) memberSymbol.getProperty(POINTABLE).get()) 
             RequiredCheck += """
@@ -253,21 +290,23 @@ public class ValidationGenerator {
                         return fmt.Errorf(\"%s is required but has a nil value.\")
                     }
                     """.formatted(
-                    memberName,
-                    memberName);
+                    dataSource,
+                    dataSource);
         writer.write(RequiredCheck);
     }
 
-    private void addUTFCheck(Symbol memberSymbol, Shape currentShape, String memberName) {
+    private void addUTFCheck(Symbol memberSymbol, Shape currentShape, String dataSource) {
         String pointableString = "";
         String UTFCheck = "";
-        if ((boolean) memberSymbol.getProperty(POINTABLE).orElse(false) == true){
-            pointableString = "*";
+        if (!(dataSource.equals(LIST_ITEM) || dataSource.equals(MAP_KEY) || dataSource.equals(MAP_VALUE))) {
+            if ((boolean) memberSymbol.getProperty(POINTABLE, Boolean.class).orElse(false)){
+                pointableString = "*";
+            }
         }
         if (pointableString.equals("*")){
             UTFCheck += """
                     if ( %s != nil ) {
-                """.formatted(memberName);
+                """.formatted(dataSource);
         }
         UTFCheck += """
                     if (!utf8.ValidString(%s%s)) {
@@ -275,9 +314,9 @@ public class ValidationGenerator {
                     }
                     """.formatted(
                         pointableString,
-                        memberName,
+                        dataSource,
                         pointableString,
-                        memberName);
+                        dataSource);
         if (pointableString.equals("*")){
             UTFCheck += """
                 }
