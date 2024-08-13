@@ -26,12 +26,6 @@ public class DafnyNameResolver {
     }
 
     public static String getDafnyType(final Shape shape, final Symbol symbol) {
-        return DafnyNameResolver.dafnyTypesNamespace(shape)
-                                .concat(DOT)
-                                .concat(symbol.getName());
-    }
-
-    public static String getBaseDafnyType(final Shape shape, final Symbol symbol) {
         ShapeType type = shape.getType();
         if (shape.hasTrait(EnumTrait.class)) {
             type = ShapeType.ENUM;
@@ -44,7 +38,9 @@ public class DafnyNameResolver {
             case DOUBLE, STRING, BLOB, LIST:
                 return "dafny.Sequence";
             case ENUM, STRUCTURE, UNION:
-                return DafnyNameResolver.getDafnyType(shape, symbol);
+                return DafnyNameResolver.dafnyTypesNamespace(shape)
+                                .concat(DOT)
+                                .concat(symbol.getName());
             default:
                 throw new IllegalArgumentException("Unexpected shape found") ;
         }
