@@ -174,10 +174,6 @@ public class GoPointableIndex implements KnowledgeIndex {
             return false;
         }
 
-        if (INHERENTLY_POINTABLE.contains(targetShape.getType())) {
-            return true;
-        }
-
         //if membershape is required return it is not pointable
         if (member.hasTrait(RequiredTrait.class) && !STRICT_POINTER_TYPE.contains(targetShape.getType())) {
             return false;
