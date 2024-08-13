@@ -96,6 +96,11 @@ public class GoPointableIndex implements KnowledgeIndex {
             ShapeType.BIG_INTEGER
     );
 
+    // Pointer types that are strictly pointer type even if it has required trait
+    private static final Set<ShapeType> STRICT_POINTER_TYPE = SetUtils.of(
+        ShapeType.STRING
+    );
+
     // All the known pointer type if not required
     private static final Set<ShapeType> KNOWN_POINTER_TYPE = SetUtils.of(
             ShapeType.BYTE,
@@ -174,7 +179,7 @@ public class GoPointableIndex implements KnowledgeIndex {
         }
 
         //if membershape is required return it is not pointable
-        if (member.hasTrait(RequiredTrait.class)) {
+        if (member.hasTrait(RequiredTrait.class) && !STRICT_POINTER_TYPE.contains(targetShape.getType())) {
             return false;
         }
 
