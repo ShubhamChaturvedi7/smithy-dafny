@@ -466,7 +466,7 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
             String createMemberFunction = memberName.replace(shape.getId().getName() + "Member", "Create_")+"_";
             Shape targetShape = context.model().expectShape(member.getTarget());
             String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(companion.%s(%s))";
-            String baseType = DafnyNameResolver.getBaseDafnyType(targetShape,context.symbolProvider().toSymbol(targetShape));
+            String baseType = DafnyNameResolver.getDafnyType(targetShape,context.symbolProvider().toSymbol(targetShape));
             eachMemberInUnion += """
                     case *%s.%s:
                         var companion = %s
