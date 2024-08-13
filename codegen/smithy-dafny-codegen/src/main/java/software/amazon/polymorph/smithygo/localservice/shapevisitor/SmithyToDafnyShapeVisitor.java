@@ -457,44 +457,49 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
     public String unionShape(UnionShape shape) {
         String internalDafnyType = DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape));
         writer.addImportFromModule("github.com/dafny-lang/DafnyRuntimeGo", "dafny");
-        String returnString = """
+        String functionInit = """
             func() Wrappers.Option {
                 switch %s.(type) {""".formatted(dataSource);
+        String eachMemberInUnion = "";
         for (var member : shape.getAllMembers().values()) {
             String memberName = context.symbolProvider().toMemberName(member);
             String createMemberFunction = memberName.replace(shape.getId().getName() + "Member", "Create_")+"_";
             Shape targetShape = context.model().expectShape(member.getTarget());
             String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(companion.%s(%s))";
-            returnString += """
+            String baseType = DafnyNameResolver.getBaseDafnyType(targetShape,context.symbolProvider().toSymbol(targetShape));
+            eachMemberInUnion += """
                     case *%s.%s:
                         var companion = %s
                         var inputToConversion = %s
-                    """.formatted(
-                            SmithyNameResolver.smithyTypesNamespace(shape),
-                            context.symbolProvider().toMemberName(member),
-                            internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
-                            targetShape.accept(
-                                    new SmithyToDafnyShapeVisitor(
-                                        context,dataSource + ".(*" + SmithyNameResolver.smithyTypesNamespace(shape) + "." + context.symbolProvider().toMemberName(member) + ").Value", writer, isConfigShape, true, false
-                                    )
+                        return %s
+                        """.formatted(
+                                SmithyNameResolver.smithyTypesNamespace(shape),
+                                context.symbolProvider().toMemberName(member),
+                                internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
+                                targetShape.accept(
+                                        new SmithyToDafnyShapeVisitor(
+                                            context,dataSource + ".(*" + SmithyNameResolver.smithyTypesNamespace(shape) + "." + context.symbolProvider().toMemberName(member) + ").Value", writer, isConfigShape, true, false
+                                        )
+                                    ),
+                                someWrapIfRequired.formatted(
+                                    createMemberFunction,
+                                    "inputToConversion.UnwrapOr(nil)%s".formatted(baseType != "" ? ".(" + baseType + ")" : "")
                                 )
-                        );
-            String baseType = DafnyNameResolver.getBaseDafnyType(targetShape,context.symbolProvider().toSymbol(targetShape));
-            returnString += """
-                    return %s
-                """.formatted(
-                    someWrapIfRequired.formatted(
-                        createMemberFunction,
-                        "inputToConversion.UnwrapOr(nil)%s".formatted(baseType != "" ? ".(" + baseType + ")" : "")
-                    )
-                );
+                            );
         }
-        returnString += """
+        String defaultCase = """
                         default:
 				            panic("Unhandled union type")
                     }
                 }()""";
-        return returnString;
+        return """
+            %s
+            %s
+            %s""".formatted(
+                functionInit,
+                eachMemberInUnion,
+                defaultCase
+            );
     }
 
     @Override

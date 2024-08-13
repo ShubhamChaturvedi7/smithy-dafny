@@ -46,7 +46,7 @@ public class DafnyNameResolver {
             case ENUM, STRUCTURE, UNION:
                 return DafnyNameResolver.getDafnyType(shape, symbol);
             default:
-                return "";
+                throw new IllegalArgumentException("Unexpected shape found") ;
         }
     }
 
