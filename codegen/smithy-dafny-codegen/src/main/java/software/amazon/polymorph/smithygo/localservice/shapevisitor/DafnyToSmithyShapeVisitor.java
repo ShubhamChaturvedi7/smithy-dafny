@@ -270,7 +270,8 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
         }
 
         var underlyingType = shape.hasTrait(DafnyUtf8BytesTrait.class) ? "uint8" : "dafny.Char";
-        return """
+        if ((boolean)isOptional) {
+            return """
                 func() (*string) {
                     var s string
                 if %s == nil {
@@ -285,6 +286,21 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                         }
                    }
                }()""".formatted(dataSource, dataSource, underlyingType);
+        }
+        else {
+            return """
+                func() (string) {
+                    var s string
+                    for i := dafny.Iterate(%s) ; ; {
+                        val, ok := i()
+                        if !ok {
+                            return []string{s}[0]
+                        } else {
+                            s = s + string(val.(%s))
+                        }
+                   }
+               }()""".formatted(dataSource, underlyingType);
+        }
     }
 
     @Override
