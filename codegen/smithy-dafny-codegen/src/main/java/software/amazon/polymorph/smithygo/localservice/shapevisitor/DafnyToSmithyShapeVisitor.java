@@ -178,9 +178,8 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
 			if !ok {
 				break
 			}
-			fieldValue = append(fieldValue, %s%s)}
+			fieldValue = append(fieldValue, %s)}
 			""".formatted(SmithyNameResolver.getSmithyType(shape, typeName), SmithyNameResolver.getSmithyType(shape, typeName), dataSource, dataSource,
-                targetShape.isStructureShape() ? "" : "*",
                 targetShape.accept(
                         new DafnyToSmithyShapeVisitor(context, "val%s".formatted(targetShape.isStructureShape() ? ".(%s)".formatted(DafnyNameResolver.getDafnyType(targetShape, context.symbolProvider().toSymbol(targetShape))) : ""), writer, isConfigShape)
                 )));
@@ -211,7 +210,7 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
 		if !ok {
 			break;
 		}
-		m[*%s] = *%s
+		m[%s] = %s
 	}
 	return m
                                }()""".formatted(type, type, type, dataSource, dataSource, keyTargetShape.accept(
@@ -306,9 +305,8 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
     @Override
     public String integerShape(IntegerShape shape) {
         writer.addImportFromModule("github.com/dafny-lang/DafnyRuntimeGo", "dafny");
-        var isPointable = this.context.symbolProvider().toSymbol(shape).getProperty(POINTABLE).orElse(false);
 
-        if ((boolean)isPointable) {
+        if ((boolean)isOptional) {
             return ("""
                     func() *int32 {
                         var b int32
