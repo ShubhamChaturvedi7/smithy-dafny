@@ -426,11 +426,9 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
         """
             %s
             %s
-            %s
             return union
         }()""".formatted(
             functionInit,
-            nilCheck,
             eachMemberInUnion
         );
     }
