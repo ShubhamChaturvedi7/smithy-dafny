@@ -300,7 +300,7 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                             %s
                         }
                    }
-               }()""".formatted(dataSource, dataSource, underlyingType);
+               }()""".formatted(dataSource, dataSource, strConv);
         }
         else {
             return """
@@ -311,10 +311,10 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                         if !ok {
                             return []string{s}[0]
                         } else {
-                            s = s + string(val.(%s))
+                            %s
                         }
                    }
-               }()""".formatted(dataSource, underlyingType);
+               }()""".formatted(dataSource, strConv);
         }
     }
 
