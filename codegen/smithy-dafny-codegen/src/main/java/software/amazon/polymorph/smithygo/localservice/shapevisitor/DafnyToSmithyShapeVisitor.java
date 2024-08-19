@@ -364,22 +364,26 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
     @Override
     public String unionShape(UnionShape shape) {
         writer.addImportFromModule("github.com/dafny-lang/DafnyRuntimeGo", "dafny");
-        final String functionInit = """
-            func() %s {
-                var union %s
-            """.formatted(
-                context.symbolProvider().toSymbol(shape), 
-                context.symbolProvider().toSymbol(shape)
-            );
-        String nilCheck = """
+        String nilCheck;
+        if (GoPointableIndex.of(context.model()).isPointable(shape) == false) {
+            nilCheck = "";
+        } else {
+            nilCheck = """
                 if %s == nil {
                         return nil
                 }""".formatted(
                         dataSource
                 );
-        if (GoPointableIndex.of(context.model()).isPointable(shape) == false) {
-            nilCheck = "";
         }
+        final String functionInit = """
+            func() %s {
+                var union %s
+                %s
+            """.formatted(
+                context.symbolProvider().toSymbol(shape), 
+                context.symbolProvider().toSymbol(shape),
+                nilCheck
+            );
         StringBuilder eachMemberInUnion = new StringBuilder();
         for (var member : shape.getAllMembers().values()) {
             final Shape targetShape = context.model().expectShape(member.getTarget());
