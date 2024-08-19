@@ -375,7 +375,7 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
             nilCheck = "";
         }
         String unionVariableInitialization = "var union %s".formatted(context.symbolProvider().toSymbol(shape));
-        String eachMemberInUnion = "";
+        StringBuilder eachMemberInUnion = new StringBuilder();
         for (var member : shape.getAllMembers().values()) {
             Shape targetShape = context.model().expectShape(member.getTarget());
             String memberName = context.symbolProvider().toMemberName(member);
@@ -396,7 +396,7 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                     var dataSource = Wrappers.Companion_Option_.Create_Some_(%s)""".formatted(unionDataSource);
                 unionDataSource = "dataSource.UnwrapOr(nil)";
             }
-            eachMemberInUnion += """
+            eachMemberInUnion.append("""
                             %s
                             %s
                             union = &%s.%s{
@@ -411,7 +411,7 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                             pointerForPointableShape,
                             targetShape.accept(
                                     new DafnyToSmithyShapeVisitor(context, unionDataSource, writer, isConfigShape, isMemberShapePointable)
-                                ));
+                                )));
         }
         return 
         """
