@@ -30,6 +30,13 @@ public class DafnyNameResolver {
                     .concat(INTERNAL_DAFNY);
     }
 
+    /**
+     * Returns the Dafny type for a given Shape.
+     *
+     * @param shape The Shape for which the Dafny type needs to be determined.
+     * @param symbol The Symbol representing the Shape.
+     * @return The Dafny type as a String.
+     */
     public static String getDafnyType(final Shape shape, final Symbol symbol) {
         ShapeType type = shape.getType();
         if (shape.hasTrait(EnumTrait.class)) {
@@ -94,7 +101,7 @@ public class DafnyNameResolver {
     }
     
     /**
-     * Returns the Create Function for creating member shape within a union shape.
+     * Returns the path to Create_ function for creating member shape within a union shape.
      *
      * @param unionShape The union shape containing the member shape.
      * @param memberName The name of the member shape within the union shape.
