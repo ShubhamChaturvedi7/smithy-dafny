@@ -455,46 +455,50 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
 
     @Override
     public String unionShape(UnionShape shape) {
-        String internalDafnyType = DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape));
+        final String internalDafnyType = DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape));
         writer.addImportFromModule("github.com/dafny-lang/DafnyRuntimeGo", "dafny");
-        String returnString = """
+        final String functionInit = """
             func() Wrappers.Option {
                 switch %s.(type) {""".formatted(dataSource);
+        StringBuilder eachMemberInUnion = new StringBuilder();
         for (var member : shape.getAllMembers().values()) {
-            String memberName = context.symbolProvider().toMemberName(member);
-            String createMemberFunction = memberName.replace(shape.getId().getName() + "Member", "Create_")+"_";
-            Shape targetShape = context.model().expectShape(member.getTarget());
-            String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(companion.%s(%s))";
-            returnString += """
+            final String memberName = context.symbolProvider().toMemberName(member);
+            final Shape targetShape = context.model().expectShape(member.getTarget());
+            final String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(%s(%s))";
+            final String baseType = DafnyNameResolver.getDafnyType(targetShape,context.symbolProvider().toSymbol(targetShape));
+            eachMemberInUnion.append("""
                     case *%s.%s:
                         var companion = %s
                         var inputToConversion = %s
-                    """.formatted(
-                            SmithyNameResolver.smithyTypesNamespace(shape),
-                            context.symbolProvider().toMemberName(member),
-                            internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
-                            targetShape.accept(
-                                    new SmithyToDafnyShapeVisitor(
-                                        context,dataSource + ".(*" + SmithyNameResolver.smithyTypesNamespace(shape) + "." + context.symbolProvider().toMemberName(member) + ").Value", writer, isConfigShape, true, false
-                                    )
+                        return %s
+                        """.formatted(
+                                SmithyNameResolver.smithyTypesNamespace(shape),
+                                context.symbolProvider().toMemberName(member),
+                                internalDafnyType.replace(shape.getId().getName(), "CompanionStruct_" + shape.getId().getName() + "_{}"),
+                                targetShape.accept(
+                                        new SmithyToDafnyShapeVisitor(
+                                            context,dataSource + ".(*" + SmithyNameResolver.smithyTypesNamespace(shape) + "." + context.symbolProvider().toMemberName(member) + ").Value", writer, isConfigShape, true, false
+                                        )
+                                    ),
+                                someWrapIfRequired.formatted(
+                                    DafnyNameResolver.getDafnyCreateFuncForUnionMemberShape(shape, memberName),
+                                    "inputToConversion.UnwrapOr(nil)%s".formatted(baseType != "" ? ".(" + baseType + ")" : "")
                                 )
-                        );
-            String baseType = DafnyNameResolver.getBaseDafnyType(targetShape,context.symbolProvider().toSymbol(targetShape));
-            returnString += """
-                    return %s
-                """.formatted(
-                    someWrapIfRequired.formatted(
-                        createMemberFunction,
-                        "inputToConversion.UnwrapOr(nil)%s".formatted(baseType != "" ? ".(" + baseType + ")" : "")
-                    )
-                );
+                            ));
         }
-        returnString += """
+        final String defaultCase = """
                         default:
 				            panic("Unhandled union type")
                     }
                 }()""";
-        return returnString;
+        return """
+            %s
+            %s
+            %s""".formatted(
+                functionInit,
+                eachMemberInUnion,
+                defaultCase
+            );
     }
 
     @Override

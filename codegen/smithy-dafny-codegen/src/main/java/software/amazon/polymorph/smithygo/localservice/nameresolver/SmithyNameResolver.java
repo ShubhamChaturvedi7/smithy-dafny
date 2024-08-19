@@ -1,5 +1,6 @@
 package software.amazon.polymorph.smithygo.localservice.nameresolver;
 
+import software.amazon.smithy.aws.traits.ServiceTrait;
 import software.amazon.smithy.codegen.core.Symbol;
 import software.amazon.smithy.model.shapes.ServiceShape;
 import software.amazon.smithy.model.shapes.Shape;
@@ -38,25 +39,25 @@ public class SmithyNameResolver {
         return getGoModuleNameForSmithyNamespace("sdk.".concat(smithyNamespace));
     }
 
-    public static String smithyTypesNamespaceAws(final Shape shape, boolean isAwsSubType) {
+    public static String smithyTypesNamespaceAws(final ServiceTrait serviceTrait, boolean isAwsSubType) {
         if (isAwsSubType) {
             return "types";
         }
-        return "kms";
+        return serviceTrait.getSdkId().toLowerCase();
     }
 
     public static String getSmithyType(final Shape shape, final Symbol symbol) {
-        if(symbol.getNamespace().contains("smithy")) {
+        if(symbol.getNamespace().contains("smithy.") || symbol.getName().contains("string")) {
             return symbol.getName();
         }
         return SmithyNameResolver.smithyTypesNamespace(shape).concat(DOT).concat(symbol.getName());
     }
 
-    public static String getSmithyTypeAws(final Shape shape, final Symbol symbol, boolean subtype) {
-        if(symbol.getNamespace().contains("smithy.")) {
+    public static String getSmithyTypeAws(final ServiceTrait serviceTrait, final Symbol symbol, boolean subtype) {
+        if(symbol.getNamespace().contains("smithy.") || symbol.getName().contains("string")) {
             return symbol.getName();
         }
-        return SmithyNameResolver.smithyTypesNamespaceAws(shape, subtype).concat(DOT).concat(symbol.getName());
+        return SmithyNameResolver.smithyTypesNamespaceAws(serviceTrait, subtype).concat(DOT).concat(symbol.getName());
     }
 
     public static String getSmithyType(final Shape shape) {
@@ -89,5 +90,11 @@ public class SmithyNameResolver {
     public static String getFromDafnyMethodName(final Shape shape, final String disambiguator) {
         final var methodName = shape.getId().getName().concat("_FromDafny");
         return SmithyNameResolver.shapeNamespace(shape).concat(DOT).concat(methodName);
+    }
+
+    public static String getAwsServiceClient(final ServiceTrait serviceTrait) {
+        return SmithyNameResolver.smithyTypesNamespaceAws(serviceTrait, false)
+                                .concat(DOT)
+                                .concat("Client");
     }
 }
