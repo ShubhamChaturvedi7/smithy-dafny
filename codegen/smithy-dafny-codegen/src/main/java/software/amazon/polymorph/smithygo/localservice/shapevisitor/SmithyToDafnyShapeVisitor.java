@@ -463,9 +463,8 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
         StringBuilder eachMemberInUnion = new StringBuilder();
         for (var member : shape.getAllMembers().values()) {
             String memberName = context.symbolProvider().toMemberName(member);
-            String createMemberFunction = memberName.replace(shape.getId().getName() + "Member", "Create_")+"_";
             Shape targetShape = context.model().expectShape(member.getTarget());
-            String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(companion.%s(%s))";
+            String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(%s(%s))";
             String baseType = DafnyNameResolver.getDafnyType(targetShape,context.symbolProvider().toSymbol(targetShape));
             eachMemberInUnion.append("""
                     case *%s.%s:
@@ -482,7 +481,7 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
                                         )
                                     ),
                                 someWrapIfRequired.formatted(
-                                    createMemberFunction,
+                                    DafnyNameResolver.getDafnyCreateFuncForUnionMemberShape(shape, memberName),
                                     "inputToConversion.UnwrapOr(nil)%s".formatted(baseType != "" ? ".(" + baseType + ")" : "")
                                 )
                             ));
