@@ -3,13 +3,14 @@ package software.amazon.polymorph.smithygo.codegen;
 import java.math.BigDecimal;
 import java.util.Optional;
 
+import software.amazon.polymorph.smithygo.codegen.knowledge.GoPointableIndex;
 import software.amazon.polymorph.traits.DafnyUtf8BytesTrait;
 import software.amazon.polymorph.traits.ReferenceTrait;
 import software.amazon.smithy.codegen.core.Symbol;
 import software.amazon.smithy.codegen.core.SymbolProvider;
 import software.amazon.smithy.model.Model;
-import software.amazon.smithy.model.shapes.MemberShape;
 import software.amazon.smithy.model.shapes.Shape;
+import software.amazon.smithy.model.shapes.SimpleShape;
 import software.amazon.smithy.model.traits.LengthTrait;
 import software.amazon.smithy.model.traits.RangeTrait;
 import software.amazon.smithy.model.traits.RequiredTrait;
@@ -25,10 +26,10 @@ public class ValidationGenerator {
     private final SymbolProvider symbolProvider;
     private final GoWriter writer;
 
-    // This strings are used for list and map
     private static final String LIST_ITEM = "item";
     private static final String MAP_KEY = "key";
     private static final String MAP_VALUE = "value";
+    private static final String UNION_DATASOURCE = "unionType.Value";
 
     public ValidationGenerator(
         Model model,
@@ -67,7 +68,6 @@ public class ValidationGenerator {
     }
 
     private void renderValidatorForEachShape (Shape currentShape, CodegenUtils.SortedMembers sortedMembers, boolean isInputStructure, String dataSource) {
-                    
                     Symbol memberSymbol = symbolProvider.toSymbol(currentShape);
                     if (isInputStructure) {
                         memberSymbol = memberSymbol.getProperty(SymbolUtils.INPUT_VARIANT, Symbol.class)
@@ -76,17 +76,23 @@ public class ValidationGenerator {
                     if (currentShape.hasTrait(ReferenceTrait.class)) {
                         memberSymbol = memberSymbol.getProperty("Referred", Symbol.class).get();
                     } 
+                    String pointableString = "";
+                    if (!(dataSource.equals(LIST_ITEM) || dataSource.equals(MAP_KEY) || dataSource.equals(MAP_VALUE) || dataSource.equals(UNION_DATASOURCE) && currentShape instanceof SimpleShape)) {
+                        if ((boolean) memberSymbol.getProperty(POINTABLE, Boolean.class).orElse(false)){
+                            pointableString = "*";
+                        }
+                    }                    
                     if (currentShape.hasTrait(RangeTrait.class)) {
-                        addRangeCheck(memberSymbol, currentShape, dataSource);
+                        addRangeCheck(memberSymbol, currentShape, dataSource, pointableString);
                     }
                     if (currentShape.hasTrait(LengthTrait.class)) {
-                        addLengthCheck(memberSymbol, currentShape, dataSource);
+                        addLengthCheck(memberSymbol, currentShape, dataSource, pointableString);
                     }
                     if (currentShape.hasTrait(RequiredTrait.class)) {
                         addRequiredCheck(memberSymbol, currentShape, dataSource);
                     }
                     if (currentShape.hasTrait(DafnyUtf8BytesTrait.class)) {
-                        addUTFCheck(memberSymbol, currentShape, dataSource);
+                        addUTFCheck(memberSymbol, currentShape, dataSource, pointableString);
                     }
                     // Broke list and map into two different if else because for _, item := range %s looked good for list
                     // And for key, value := range %s looked good for map
@@ -143,23 +149,16 @@ public class ValidationGenerator {
                     }
     }
 
-    private void addRangeCheck(Symbol memberSymbol, Shape currentShape, String dataSource) {
-        String pointableString = "";
+    private void addRangeCheck(Symbol memberSymbol, Shape currentShape, String dataSource, String pointableString) {
         String rangeCheck = "";
         RangeTrait rangeTraitShape = currentShape.expectTrait(RangeTrait.class);
         Optional<BigDecimal> min = rangeTraitShape.getMin();
         Optional<BigDecimal> max = rangeTraitShape.getMax();
-        if (!(dataSource.equals(LIST_ITEM) || dataSource.equals(MAP_KEY) || dataSource.equals(MAP_VALUE))) {
-            if ((boolean) memberSymbol.getProperty(POINTABLE, Boolean.class).orElse(false)){
-                pointableString = "*";
-            }
-        }
         if (pointableString.equals("*")){
             rangeCheck += """
                     if (%s != nil) {
                 """.formatted(dataSource);
         }
-
         if (min.isPresent()) {
             rangeCheck += """
                     if (%s%s < %s) {
@@ -194,21 +193,13 @@ public class ValidationGenerator {
                 """;
         }
         writer.write(rangeCheck);
-        
     }
 
-    private void addLengthCheck(Symbol memberSymbol, Shape currentShape, String dataSource) {
-        String pointableString = "";
+    private void addLengthCheck(Symbol memberSymbol, Shape currentShape, String dataSource, String pointableString) {
         String lengthCheck = "";
         LengthTrait lengthTraitShape = currentShape.expectTrait(LengthTrait.class);
         Optional<Long> min = lengthTraitShape.getMin();
         Optional<Long> max = lengthTraitShape.getMax();
-        System.out.println(memberSymbol.getProperties());
-        if (!(dataSource.equals(LIST_ITEM) || dataSource.equals(MAP_KEY) || dataSource.equals(MAP_VALUE))) {
-            if ((boolean) memberSymbol.getProperty(POINTABLE, Boolean.class).orElse(false)){
-                pointableString = "*";
-            }
-        }
         if (pointableString.equals("*")){
             lengthCheck += """
                     if (%s != nil) {
@@ -295,14 +286,8 @@ public class ValidationGenerator {
         writer.write(RequiredCheck);
     }
 
-    private void addUTFCheck(Symbol memberSymbol, Shape currentShape, String dataSource) {
-        String pointableString = "";
+    private void addUTFCheck(Symbol memberSymbol, Shape currentShape, String dataSource, String pointableString) {
         String UTFCheck = "";
-        if (!(dataSource.equals(LIST_ITEM) || dataSource.equals(MAP_KEY) || dataSource.equals(MAP_VALUE))) {
-            if ((boolean) memberSymbol.getProperty(POINTABLE, Boolean.class).orElse(false)){
-                pointableString = "*";
-            }
-        }
         if (pointableString.equals("*")){
             UTFCheck += """
                     if ( %s != nil ) {
