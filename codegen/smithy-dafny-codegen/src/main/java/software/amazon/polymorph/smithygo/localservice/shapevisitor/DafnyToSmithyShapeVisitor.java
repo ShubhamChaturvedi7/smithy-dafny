@@ -364,7 +364,7 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
     @Override
     public String unionShape(UnionShape shape) {
         writer.addImportFromModule("github.com/dafny-lang/DafnyRuntimeGo", "dafny");
-        String functionInit = """
+        final String functionInit = """
             func() %s {
                 var union %s
             """.formatted(
@@ -382,21 +382,21 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
         }
         StringBuilder eachMemberInUnion = new StringBuilder();
         for (var member : shape.getAllMembers().values()) {
-            Shape targetShape = context.model().expectShape(member.getTarget());
-            String memberName = context.symbolProvider().toMemberName(member);
-            String rawUnionDataSource = "(" + dataSource + ".(" + DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape)) + "))";
+            final Shape targetShape = context.model().expectShape(member.getTarget());
+            final String memberName = context.symbolProvider().toMemberName(member);
+            final String rawUnionDataSource = "(" + dataSource + ".(" + DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape)) + "))";
             // unwrap union type, assert it then convert it to its member type with Dtor_ (example: Dtor_BlobValue()). unionDataSource is not a wrapper object until now.
             String unionDataSource = rawUnionDataSource + ".Dtor_" + memberName.replace(shape.getId().getName() + "Member", "") + "()";
-            Boolean isMemberShapePointable = (GoPointableIndex.of(context.model()).isPointable(targetShape) && GoPointableIndex.of(context.model()).isDereferencable(targetShape)) && !targetShape.isStructureShape();
-            String pointerForPointableShape = isMemberShapePointable ? "*" : "";
-            String isMemberCheck = """
+            final Boolean isMemberShapePointable = (GoPointableIndex.of(context.model()).isPointable(targetShape) && GoPointableIndex.of(context.model()).isDereferencable(targetShape)) && !targetShape.isStructureShape();
+            final String pointerForPointableShape = isMemberShapePointable ? "*" : "";
+            final String isMemberCheck = """
                         if ((%s).%s()) {""".formatted(
                             rawUnionDataSource,
                             memberName.replace(shape.getId().getName() + "Member", "Is_")
                         );
             String wrappedDataSource = "";
-            if (!(targetShape.isListShape() || targetShape.isStructureShape())) {
-                // All other shape except list and structure needs a Wrapper object but unionDataSource is not a Wrapper object. 
+            if (!(targetShape.isStructureShape())) {
+                // All other shape except structure needs a Wrapper object but unionDataSource is not a Wrapper object. 
                 wrappedDataSource = """
                     var dataSource = Wrappers.Companion_Option_.Create_Some_(%s)""".formatted(unionDataSource);
                 unionDataSource = "dataSource.UnwrapOr(nil)";

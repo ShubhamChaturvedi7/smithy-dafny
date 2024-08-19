@@ -455,19 +455,19 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
 
     @Override
     public String unionShape(UnionShape shape) {
-        String internalDafnyType = DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape));
+        final String internalDafnyType = DafnyNameResolver.getDafnyType(shape, context.symbolProvider().toSymbol(shape));
         writer.addImportFromModule("github.com/dafny-lang/DafnyRuntimeGo", "dafny");
-        String functionInit = """
+        final String functionInit = """
             func() Wrappers.Option {
                 switch %s.(type) {""".formatted(dataSource);
-        String eachMemberInUnion = "";
+        StringBuilder eachMemberInUnion = new StringBuilder();
         for (var member : shape.getAllMembers().values()) {
             String memberName = context.symbolProvider().toMemberName(member);
             String createMemberFunction = memberName.replace(shape.getId().getName() + "Member", "Create_")+"_";
             Shape targetShape = context.model().expectShape(member.getTarget());
             String someWrapIfRequired = "Wrappers.Companion_Option_.Create_Some_(companion.%s(%s))";
             String baseType = DafnyNameResolver.getDafnyType(targetShape,context.symbolProvider().toSymbol(targetShape));
-            eachMemberInUnion += """
+            eachMemberInUnion.append("""
                     case *%s.%s:
                         var companion = %s
                         var inputToConversion = %s
@@ -485,9 +485,9 @@ public class SmithyToDafnyShapeVisitor extends ShapeVisitor.Default<String> {
                                     createMemberFunction,
                                     "inputToConversion.UnwrapOr(nil)%s".formatted(baseType != "" ? ".(" + baseType + ")" : "")
                                 )
-                            );
+                            ));
         }
-        String defaultCase = """
+        final String defaultCase = """
                         default:
 				            panic("Unhandled union type")
                     }
