@@ -15,16 +15,13 @@
 
 package software.amazon.polymorph.smithygo.codegen;
 
-import software.amazon.polymorph.smithygo.codegen.integration.ProtocolGenerator;
-import software.amazon.polymorph.smithygo.nameresolver.SmithyNameResolver;
-import software.amazon.polymorph.traits.LocalServiceTrait;
+import software.amazon.polymorph.smithygo.localservice.nameresolver.SmithyNameResolver;
 import software.amazon.polymorph.traits.ReferenceTrait;
 import software.amazon.smithy.codegen.core.Symbol;
 import software.amazon.smithy.codegen.core.SymbolProvider;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.MemberShape;
-import software.amazon.smithy.model.shapes.ServiceShape;
 import software.amazon.smithy.model.shapes.StructureShape;
 import software.amazon.smithy.model.traits.ErrorTrait;
 import software.amazon.smithy.model.traits.LengthTrait;
@@ -36,6 +33,7 @@ import software.amazon.smithy.utils.SetUtils;
 import static software.amazon.polymorph.smithygo.codegen.SymbolUtils.POINTABLE;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -146,18 +144,23 @@ public final class StructureGenerator implements Runnable {
 
             // Write out a struct to hold the error data.
             writer.openBlock("type $L struct {", "}", structureSymbol.getName(), () -> {
-                // The message is the only part of the standard APIError interface that isn't known ahead of time.
-                // Message is a pointer mostly for the sake of consistency.
                 writer.write("$LBaseException", context.settings().getService().getName());
-                writer.write("Message *string").write("");
-                writer.write("ErrorCodeOverride *string").write("");
-
+                Set<String> memberNameSet = new HashSet<>();
                 for (MemberShape member : shape.getAllMembers().values()) {
                     String memberName = symbolProvider.toMemberName(member);
-                    // error messages are represented under Message for consistency
-                    if (!ERROR_MEMBER_NAMES.contains(memberName)) {
-                        writer.write("$L $P", memberName, symbolProvider.toSymbol(member));
-                    }
+                    memberNameSet.add(memberName);
+                    writer.write("$L $P", memberName, symbolProvider.toSymbol(member));
+                }
+                
+                // The message is the only part of the standard APIError interface that isn't known ahead of time.
+                // Message is a pointer mostly for the sake of consistency.
+
+                // If Message and ErrorCodeOverride is not defined in model.
+                if (!memberNameSet.contains("Message")) {
+                    writer.write("Message *string").write("");
+                }
+                if (!memberNameSet.contains("ErrorCodeOverride")) {
+                    writer.write("ErrorCodeOverride *string").write("");
                 }
 
             }).write("");
