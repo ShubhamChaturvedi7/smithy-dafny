@@ -76,4 +76,29 @@ public class UnionGenerator {
     private boolean isEventStreamErrorMember(MemberShape memberShape) {
         return isEventStream && memberShape.getMemberTrait(model, ErrorTrait.class).isPresent();
     }
+
+    /**
+     * Generates a struct for unknown union values that applies to every union in the given set.
+     *
+     * @param writer         The writer to write the union to.
+     * @param unions         A set of unions whose interfaces the union should apply to.
+     * @param symbolProvider A symbol provider used to get the symbols for the unions.
+     */
+    public static void generateUnknownUnion(
+            GoWriter writer,
+            Collection<UnionShape> unions,
+            SymbolProvider symbolProvider
+    ) {
+        writer.openBlock("type $L struct {", "}", UNKNOWN_MEMBER_NAME, () -> {
+            // The tag (member) name received over the wire.
+            writer.write("Tag string");
+            // The value received.
+            writer.write("Value []byte");
+            writer.write("");
+        });
+
+        for (UnionShape union : unions) {
+            writer.write("func (*$L) is$L() {}", UNKNOWN_MEMBER_NAME, symbolProvider.toSymbol(union).getName());
+        }
+    }
 }
