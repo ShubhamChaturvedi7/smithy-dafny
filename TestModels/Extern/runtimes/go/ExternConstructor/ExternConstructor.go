@@ -3,9 +3,10 @@ package ExternConstructor
 import (
 	"fmt"
 
-	simpledafnyexterninternaldafnytypes "github.com/Smithy-dafny/TestModels/Extern/simpledafnyexterninternaldafnytypes"
-	dafny "github.com/dafny-lang/DafnyRuntimeGo/dafny"
-	Wrappers "github.com/dafny-lang/DafnyStandardLibGo/Wrappers"
+	"github.com/Smithy-dafny/TestModels/Extern/simpledafnyexterninternaldafnytypes"
+	"github.com/Smithy-dafny/TestModels/Extern/simpledafnyexterntypes"
+	"github.com/dafny-lang/DafnyRuntimeGo/dafny"
+	"github.com/dafny-lang/DafnyStandardLibGo/Wrappers"
 )
 
 type ExternConstructorClass struct {
