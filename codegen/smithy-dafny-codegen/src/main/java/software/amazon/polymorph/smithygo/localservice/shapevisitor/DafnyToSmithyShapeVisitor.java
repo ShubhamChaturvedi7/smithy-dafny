@@ -149,7 +149,7 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                                                                        memberShape.isOptional() && targetShape.isStructureShape() && !targetShape.hasTrait(ReferenceTrait.class) ? ".(%s)".formatted(DafnyNameResolver.getDafnyType(targetShape, context.symbolProvider().toSymbol(memberShape))) : "");
                 builder.append("%1$s: %2$s%3$s,".formatted(
                         StringUtils.capitalize(memberName),
-                        targetShape.isStructureShape() && !targetShape.hasTrait(ReferenceTrait.class) ? "&" : "",
+                        (targetShape.isStructureShape() && memberShape.isOptional()) && !targetShape.hasTrait(ReferenceTrait.class) ? "&" : "",
                         targetShape.accept(
                                 new DafnyToSmithyShapeVisitor(context, derivedDataSource, writer, isConfigShape, memberShape.isOptional())
                         )
