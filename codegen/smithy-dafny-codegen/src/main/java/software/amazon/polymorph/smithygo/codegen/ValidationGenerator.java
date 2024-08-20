@@ -11,6 +11,7 @@ import software.amazon.smithy.codegen.core.SymbolProvider;
 import software.amazon.smithy.model.Model;
 import software.amazon.smithy.model.shapes.Shape;
 import software.amazon.smithy.model.shapes.SimpleShape;
+import software.amazon.smithy.model.shapes.MemberShape;
 import software.amazon.smithy.model.traits.LengthTrait;
 import software.amazon.smithy.model.traits.RangeTrait;
 import software.amazon.smithy.model.traits.RequiredTrait;
@@ -62,37 +63,36 @@ public class ValidationGenerator {
                         memberName = dataSource;
                     else 
                         memberName = dataSource + "." + symbolProvider.toMemberName(member);
-                    
-                    renderValidatorForEachShape(model.expectShape(member.getTarget()), sortedMembers, isInputStructure, memberName);
+                    renderValidatorForEachShape(model.expectShape(member.getTarget()), member, sortedMembers, isInputStructure, memberName);
                 });
     }
 
-    private void renderValidatorForEachShape (Shape currentShape, CodegenUtils.SortedMembers sortedMembers, boolean isInputStructure, String dataSource) {
-                    Symbol memberSymbol = symbolProvider.toSymbol(currentShape);
+    private void renderValidatorForEachShape (Shape currentShape, MemberShape memberShape, CodegenUtils.SortedMembers sortedMembers, boolean isInputStructure, String dataSource) {
+                    Symbol symbol = symbolProvider.toSymbol(currentShape);
                     if (isInputStructure) {
-                        memberSymbol = memberSymbol.getProperty(SymbolUtils.INPUT_VARIANT, Symbol.class)
-                                .orElse(memberSymbol);
+                        symbol = symbol.getProperty(SymbolUtils.INPUT_VARIANT, Symbol.class)
+                                .orElse(symbol);
                     }
                     if (currentShape.hasTrait(ReferenceTrait.class)) {
-                        memberSymbol = memberSymbol.getProperty("Referred", Symbol.class).get();
+                        symbol = symbol.getProperty("Referred", Symbol.class).get();
                     } 
                     String pointableString = "";
                     if (!(dataSource.equals(LIST_ITEM) || dataSource.equals(MAP_KEY) || dataSource.equals(MAP_VALUE) || dataSource.equals(UNION_DATASOURCE) && currentShape instanceof SimpleShape)) {
-                        if ((boolean) memberSymbol.getProperty(POINTABLE, Boolean.class).orElse(false)){
+                        if ((boolean) symbol.getProperty(POINTABLE, Boolean.class).orElse(false) && memberShape.isOptional()){
                             pointableString = "*";
                         }
                     }                    
                     if (currentShape.hasTrait(RangeTrait.class)) {
-                        addRangeCheck(memberSymbol, currentShape, dataSource, pointableString);
+                        addRangeCheck(symbol, currentShape, dataSource, pointableString);
                     }
                     if (currentShape.hasTrait(LengthTrait.class)) {
-                        addLengthCheck(memberSymbol, currentShape, dataSource, pointableString);
+                        addLengthCheck(symbol, currentShape, dataSource, pointableString);
                     }
                     if (currentShape.hasTrait(RequiredTrait.class)) {
-                        addRequiredCheck(memberSymbol, currentShape, dataSource);
+                        addRequiredCheck(symbol, currentShape, dataSource);
                     }
                     if (currentShape.hasTrait(DafnyUtf8BytesTrait.class)) {
-                        addUTFCheck(memberSymbol, currentShape, dataSource, pointableString);
+                        addUTFCheck(symbol, currentShape, dataSource, pointableString);
                     }
                     // Broke list and map into two different if else because for _, item := range %s looked good for list
                     // And for key, value := range %s looked good for map
@@ -131,7 +131,7 @@ public class ValidationGenerator {
                                         symbolProvider.toMemberName(memberInUnion)
                                         ));
                                     
-                            renderValidatorForEachShape(model.expectShape(memberInUnion.getTarget()), sortedMembers, isInputStructure, "unionType.Value");
+                            renderValidatorForEachShape(model.expectShape(memberInUnion.getTarget()), memberInUnion, sortedMembers, isInputStructure, "unionType.Value");
                         }
                         writer.write("""
                                 // Default case should not be reached. 
