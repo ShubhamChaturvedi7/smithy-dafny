@@ -477,7 +477,9 @@ _polymorph_go: _polymorph _mv_polymorph_go run_goimports
 
 run_goimports:
 	cd runtimes/go/ImplementationFromDafny-go && goimports -w .
-	cd runtimes/go/TestsFromDafny-go && goimports -w .
+	@if [ -d runtimes/go/TestsFromDafny-go ]; then \
+		cd runtimes/go/TestsFromDafny-go && goimports -w . ; \
+	fi
 
 _gomod_init:
 	#TODO: Think about handwritten go.mod
@@ -664,7 +666,7 @@ _clean:
 
 clean: _clean
 
-transpile_go: transpile_implementation_go transpile_test_go transpile_dependencies_go
+transpile_go: transpile_dependencies_go transpile_implementation_go transpile_test_go
 
 transpile_implementation_go: TARGET=go
 transpile_implementation_go: OUT=runtimes/go/ImplementationFromDafny
