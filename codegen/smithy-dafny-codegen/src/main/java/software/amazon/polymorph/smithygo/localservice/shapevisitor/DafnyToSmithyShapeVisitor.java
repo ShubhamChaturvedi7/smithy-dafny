@@ -293,7 +293,7 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                     for i := dafny.Iterate(%s) ; ; {
                         val, ok := i()
                         if !ok {
-                            return []string{s}[0]
+                            return s
                         } else {
                             s = s + string(val.(%s))
                         }
