@@ -473,7 +473,11 @@ polymorph_go:
 _polymorph_go: OUTPUT_GO=--output-go $(LIBRARY_ROOT)/runtimes/go/
 _polymorph_go: MODULE_NAME=--module-name $(GO_MODULE_NAME)
 _polymorph_go: DEPENDENCY_MODULE_NAMES = $(GO_DEPENDENCY_MODULE_NAMES)
-_polymorph_go: _polymorph _mv_polymorph_go
+_polymorph_go: _polymorph _mv_polymorph_go run_goimports
+
+run_goimports:
+	cd runtimes/go/ImplementationFromDafny-go && goimports -w .
+	cd runtimes/go/TestsFromDafny-go && goimports -w .
 
 _gomod_init:
 	#TODO: Think about handwritten go.mod
@@ -732,3 +736,9 @@ local_transpile_test_single: TRANSPILE_DEPENDENCIES= \
 		$(patsubst %, -library:$(PROJECT_ROOT)/%, $(PROJECT_INDEX)) \
 		-library:$(PROJECT_ROOT)/$(STD_LIBRARY)/src/Index.dfy
 local_transpile_test_single: transpile_test
+
+removeDots:
+	chmod +x ./removeDotFromExtern.sh
+	./removeDotFromExtern.sh
+
+transpile_implementation_go: removeDots
