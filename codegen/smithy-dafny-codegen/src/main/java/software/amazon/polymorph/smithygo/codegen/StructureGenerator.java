@@ -35,6 +35,7 @@ import static software.amazon.polymorph.smithygo.codegen.SymbolUtils.POINTABLE;
 
 import java.math.BigDecimal;
 import java.util.HashSet;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -140,36 +141,38 @@ public final class StructureGenerator implements Runnable {
      * Renders an error structure and supporting methods.
      */
     private void renderErrorStructure() {
-            Symbol structureSymbol = symbolProvider.toSymbol(shape);
-            writer.addUseImports(SmithyGoDependency.FMT);
-            ErrorTrait errorTrait = shape.expectTrait(ErrorTrait.class);
+        Symbol structureSymbol = symbolProvider.toSymbol(shape);
+        writer.addUseImports(SmithyGoDependency.FMT);
+        ErrorTrait errorTrait = shape.expectTrait(ErrorTrait.class);
 
-            // Write out a struct to hold the error data.
-            writer.openBlock("type $L struct {", "}", structureSymbol.getName(), () -> {
-                writer.write("$LBaseException", context.settings().getService().getName());
-                Set<String> memberNameSet = new HashSet<>();
-                for (MemberShape member : shape.getAllMembers().values()) {
-                    String memberName = symbolProvider.toMemberName(member);
-                    memberNameSet.add(memberName);
-                    writer.write("$L $P", memberName, symbolProvider.toSymbol(member));
-                }
-                
-                // The message is the only part of the standard APIError interface that isn't known ahead of time.
-                // Message is a pointer mostly for the sake of consistency.
+        // Write out a struct to hold the error data.
+        writer.openBlock("type $L struct {", "}", structureSymbol.getName(), () -> {
+            writer.write("$LBaseException", context.settings().getService().getName());
+            Set<String> memberNameSet = new HashSet<>();
+            // TODO: Revisit if message has to be strictly pointer or not (even with required trait). 
+            // When any shape is required we don't add pointer in local service but AWS SDK does.
+            for (MemberShape member : shape.getAllMembers().values()) {
+                String memberName = symbolProvider.toMemberName(member);
+                memberNameSet.add(memberName);
+                writer.write("$L $P", memberName, symbolProvider.toSymbol(member));
+            }
+            
+            // The message is the only part of the standard APIError interface that isn't known ahead of time.
+            // Message is a pointer mostly for the sake of consistency.
 
-                // If Message and ErrorCodeOverride is not defined in model.
-                if (!memberNameSet.contains("Message")) {
-                    writer.write("Message *string").write("");
-                }
-                if (!memberNameSet.contains("ErrorCodeOverride")) {
-                    writer.write("ErrorCodeOverride *string").write("");
-                }
+            // If Message and ErrorCodeOverride is not defined in model.
+            if (!memberNameSet.contains("Message")) {
+                writer.write("Message *string").write("");
+            }
+            if (!memberNameSet.contains("ErrorCodeOverride")) {
+                writer.write("ErrorCodeOverride *string").write("");
+            }
 
-            }).write("");
+        }).write("");
 
-            // write the Error method to satisfy the standard error interface
-            writer.openBlock("func (e $L) Error() string {", "}", structureSymbol.getName(), () -> {
-                writer.write("return fmt.Sprintf(\"%s: %s\", e.ErrorCodeOverride, e.Message)");
-            });
-    }
+        // write the Error method to satisfy the standard error interface
+        writer.openBlock("func (e $L) Error() string {", "}", structureSymbol.getName(), () -> {
+            writer.write("return fmt.Sprintf(\"%s: %s\", e.ErrorCodeOverride, e.Message)");
+        });
+}
 }
