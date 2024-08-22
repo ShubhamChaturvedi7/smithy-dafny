@@ -168,10 +168,6 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
         MemberShape memberShape = shape.getMember();
         final Shape targetShape = context.model().expectShape(memberShape.getTarget());
         var typeName = targetShape.isStructureShape() ? context.symbolProvider().toSymbol(memberShape) : context.symbolProvider().toSymbol(memberShape);
-        // TODO: override symbolvisitor?
-        if (targetShape.hasTrait(DafnyUtf8BytesTrait.class)) {
-            typeName = Symbol.builder().name("string").namespace("smithyapitypes", "").build();
-        }
         builder.append("""
                        func() []%s{
                        var fieldValue []%s
@@ -309,7 +305,7 @@ public class DafnyToSmithyShapeVisitor extends ShapeVisitor.Default<String> {
                     for i := dafny.Iterate(%s) ; ; {
                         val, ok := i()
                         if !ok {
-                            return []string{s}[0]
+                            return s
                         } else {
                             %s
                         }

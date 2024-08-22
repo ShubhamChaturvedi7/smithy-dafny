@@ -120,19 +120,6 @@ public class DafnyNameResolver {
                 .concat(memberName.replace(unionShape.getId().getName() + "Member", "Create_"))
                 .concat("_");
     }
-    
-    /**
-     * Returns the path to Create_ function for creating member shape within a union shape.
-     *
-     * @param unionShape The union shape containing the member shape.
-     * @param memberName The name of the member shape within the union shape.
-     */
-    public static String getDafnyCreateFuncForUnionMemberShape(final UnionShape unionShape, final String memberName) {
-        return "companion"
-                .concat(DOT)
-                .concat(memberName.replace(unionShape.getId().getName() + "Member", "Create_"))
-                .concat("_");
-    }
 
     public static String getDafnyClient(final Shape shape, final String sdkId) {
         return DafnyNameResolver.dafnyNamespace(shape)
