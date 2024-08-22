@@ -3,7 +3,6 @@ package software.amazon.polymorph.smithygo.codegen;
 import java.math.BigDecimal;
 import java.util.Optional;
 
-import software.amazon.polymorph.smithygo.codegen.knowledge.GoPointableIndex;
 import software.amazon.polymorph.traits.DafnyUtf8BytesTrait;
 import software.amazon.polymorph.traits.ReferenceTrait;
 import software.amazon.smithy.codegen.core.Symbol;
@@ -33,10 +32,10 @@ public class ValidationGenerator {
     private static final String UNION_DATASOURCE = "unionType.Value";
 
     public ValidationGenerator(
-        Model model,
-        Shape shape,
-        SymbolProvider symbolProvider,
-        GoWriter writer
+        final Model model,
+        final Shape shape,
+        final SymbolProvider symbolProvider,
+        final GoWriter writer
     ) {
         this.model = model;
         this.shape = shape;
@@ -45,7 +44,7 @@ public class ValidationGenerator {
         this.writer = writer;
     }
 
-    public void renderValidator (boolean isInputStructure) {
+    public void renderValidator (final boolean isInputStructure) {
         CodegenUtils.SortedMembers sortedMembers = new CodegenUtils.SortedMembers(symbolProvider);
         writer.openBlock("func (input $L) Validate() (error) {", symbol.getName());
         renderValidatorHelper( shape, sortedMembers, isInputStructure, "input");
@@ -53,7 +52,7 @@ public class ValidationGenerator {
         writer.closeBlock("}").write("");
     }
 
-    private void renderValidatorHelper (Shape containerShape, CodegenUtils.SortedMembers sortedMembers, boolean isInputStructure, String dataSource) {
+    private void renderValidatorHelper (final Shape containerShape, final CodegenUtils.SortedMembers sortedMembers, final boolean isInputStructure, final String dataSource) {
         containerShape.getAllMembers().values().stream()
                 .filter(memberShape -> !StreamingTrait.isEventStream(model, memberShape))
                 .sorted(sortedMembers)
@@ -67,7 +66,7 @@ public class ValidationGenerator {
                 });
     }
 
-    private void renderValidatorForEachShape (Shape currentShape, MemberShape memberShape, CodegenUtils.SortedMembers sortedMembers, boolean isInputStructure, String dataSource) {
+    private void renderValidatorForEachShape (final Shape currentShape, final MemberShape memberShape, final CodegenUtils.SortedMembers sortedMembers, final boolean isInputStructure, final String dataSource) {
                     Symbol symbol = symbolProvider.toSymbol(currentShape);
                     if (isInputStructure) {
                         symbol = symbol.getProperty(SymbolUtils.INPUT_VARIANT, Symbol.class)
@@ -149,18 +148,18 @@ public class ValidationGenerator {
                     }
     }
 
-    private void addRangeCheck(Symbol memberSymbol, Shape currentShape, String dataSource, String pointableString) {
-        String rangeCheck = "";
+    private void addRangeCheck(final Symbol memberSymbol, final Shape currentShape, final String dataSource, final String pointableString) {
+        StringBuilder rangeCheck = new StringBuilder();
         RangeTrait rangeTraitShape = currentShape.expectTrait(RangeTrait.class);
         Optional<BigDecimal> min = rangeTraitShape.getMin();
         Optional<BigDecimal> max = rangeTraitShape.getMax();
         if (pointableString.equals("*")){
-            rangeCheck += """
+            rangeCheck.append("""
                     if (%s != nil) {
-                """.formatted(dataSource);
+                """.formatted(dataSource));
         }
         if (min.isPresent()) {
-            rangeCheck += """
+            rangeCheck.append("""
                     if (%s%s < %s) {
                         return fmt.Errorf(\"%s has a minimum of %s but has the value of %%d.\", %s%s)
                     }
@@ -171,10 +170,10 @@ public class ValidationGenerator {
                         currentShape.getId().getName(),
                         min.get().toString(),
                         pointableString,
-                        dataSource);
+                        dataSource));
         }
         if (max.isPresent()) {
-            rangeCheck += """
+            rangeCheck.append("""
                     if (%s%s > %s) {
                         return fmt.Errorf(\"%s has a maximum of %s but has the value of %%d.\", %s%s)
                     }
@@ -185,29 +184,29 @@ public class ValidationGenerator {
                         currentShape.getId().getName(),
                         max.get().toString(),
                         pointableString,
-                        dataSource);
+                        dataSource));
         }
         if (pointableString.equals("*")){
-            rangeCheck += """
+            rangeCheck.append("""
                 }
-                """;
+                """);
         }
         writer.write(rangeCheck);
     }
 
-    private void addLengthCheck(Symbol memberSymbol, Shape currentShape, String dataSource, String pointableString) {
-        String lengthCheck = "";
+    private void addLengthCheck(final Symbol memberSymbol, final Shape currentShape, final String dataSource, final String pointableString) {
+        StringBuilder lengthCheck = new StringBuilder();
         LengthTrait lengthTraitShape = currentShape.expectTrait(LengthTrait.class);
         Optional<Long> min = lengthTraitShape.getMin();
         Optional<Long> max = lengthTraitShape.getMax();
         if (pointableString.equals("*")){
-            lengthCheck += """
+            lengthCheck.append("""
                     if (%s != nil) {
-                """.formatted(dataSource);
+                """.formatted(dataSource));
         }
         if (min.isPresent()) {
             if (currentShape.hasTrait(DafnyUtf8BytesTrait.class)) {
-                lengthCheck += """
+                lengthCheck.append("""
                     if (utf8.RuneCountInString(%s%s) < %s) {
                         return fmt.Errorf(\"%s has a minimum length of %s but has the length of %%d.\", utf8.RuneCountInString(%s%s))
                     }
@@ -218,10 +217,10 @@ public class ValidationGenerator {
                         currentShape.getId().getName(),
                         min.get().toString(),
                         pointableString,
-                        dataSource);           
+                        dataSource));           
             }
             else {
-                lengthCheck += """
+                lengthCheck.append("""
                         if (len(%s%s) < %s) {
                             return fmt.Errorf(\"%s has a minimum length of %s but has the length of %%d.\", len(%s%s))
                         }
@@ -232,12 +231,12 @@ public class ValidationGenerator {
                             currentShape.getId().getName(),
                             min.get().toString(),
                             pointableString,
-                            dataSource);
+                            dataSource));
             }
         }
         if (max.isPresent()) {
             if (currentShape.hasTrait(DafnyUtf8BytesTrait.class)) {
-                lengthCheck += """
+                lengthCheck.append("""
                     if (utf8.RuneCountInString(%s%s) > %s) {
                         return fmt.Errorf(\"%s has a maximum length of %s but has the length of %%d.\", utf8.RuneCountInString(%s%s))
                     }
@@ -248,10 +247,10 @@ public class ValidationGenerator {
                         currentShape.getId().getName(),
                         max.get().toString(),
                         pointableString,
-                        dataSource);
+                        dataSource));
             }
             else {
-                lengthCheck += """
+                lengthCheck.append("""
                         if (len(%s%s) > %s) {
                             return fmt.Errorf(\"%s has a maximum length of %s but has the length of %%d.\", len(%s%s))
                         }
@@ -262,38 +261,38 @@ public class ValidationGenerator {
                             currentShape.getId().getName(),
                             max.get().toString(),
                             pointableString,
-                            dataSource);
+                            dataSource));
             }
         }
         if (pointableString.equals("*")){
-            lengthCheck += """
+            lengthCheck.append("""
                 }
-                """;
+                """);
         }
         writer.write(lengthCheck);
     }
 
-    private void addRequiredCheck(Symbol memberSymbol, Shape currentShape, String dataSource) {
-        String RequiredCheck = "";
+    private void addRequiredCheck(final Symbol memberSymbol, final Shape currentShape, final String dataSource) {
+        StringBuilder RequiredCheck = new StringBuilder();
         if( memberSymbol.getProperty(POINTABLE).isPresent() && (boolean) memberSymbol.getProperty(POINTABLE).get()) 
-            RequiredCheck += """
+            RequiredCheck.append("""
                     if ( %s == nil ) {
                         return fmt.Errorf(\"%s is required but has a nil value.\")
                     }
                     """.formatted(
                     dataSource,
-                    dataSource);
+                    dataSource));
         writer.write(RequiredCheck);
     }
 
-    private void addUTFCheck(Symbol memberSymbol, Shape currentShape, String dataSource, String pointableString) {
-        String UTFCheck = "";
+    private void addUTFCheck(final Symbol memberSymbol, final Shape currentShape, final String dataSource, final String pointableString) {
+        StringBuilder UTFCheck = new StringBuilder();
         if (pointableString.equals("*")){
-            UTFCheck += """
+            UTFCheck.append("""
                     if ( %s != nil ) {
-                """.formatted(dataSource);
+                """.formatted(dataSource));
         }
-        UTFCheck += """
+        UTFCheck.append("""
                     if (!utf8.ValidString(%s%s)) {
                         return fmt.Errorf(\"Invalid UTF bytes %%s \", %s%s)
                     }
@@ -301,11 +300,11 @@ public class ValidationGenerator {
                         pointableString,
                         dataSource,
                         pointableString,
-                        dataSource);
+                        dataSource));
         if (pointableString.equals("*")){
-            UTFCheck += """
+            UTFCheck.append("""
                 }
-                """;
+                """);
         }
         writer.write(UTFCheck);
     }
