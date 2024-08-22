@@ -292,7 +292,7 @@ public final class StructureGenerator implements Runnable {
             writer.openBlock("type $L struct {", "}", structureSymbol.getName(), () -> {
                 writer.write("$LBaseException", context.settings().getService().getName());
                 Set<String> memberNameSet = new HashSet<>();
-                // TODO: Revisit if message has to be pointer or not. 
+                // TODO: Revisit if message has to be strictly pointer or not (even with required trait). 
                 // When any shape is required we don't add pointer in local service but AWS SDK does.
                 for (MemberShape member : shape.getAllMembers().values()) {
                     String memberName = symbolProvider.toMemberName(member);
