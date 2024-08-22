@@ -25,6 +25,7 @@ public class ValidationGenerator {
     private final Symbol symbol;
     private final SymbolProvider symbolProvider;
     private final GoWriter writer;
+    private final CodegenUtils.SortedMembers sortedMembers;
 
     private static final String LIST_ITEM = "item";
     private static final String MAP_KEY = "key";
@@ -42,17 +43,17 @@ public class ValidationGenerator {
         this.symbol = symbolProvider.toSymbol(shape);
         this.symbolProvider = symbolProvider;
         this.writer = writer;
+        this.sortedMembers = new CodegenUtils.SortedMembers(symbolProvider);
     }
 
     public void renderValidator (final boolean isInputStructure) {
-        CodegenUtils.SortedMembers sortedMembers = new CodegenUtils.SortedMembers(symbolProvider);
         writer.openBlock("func (input $L) Validate() (error) {", symbol.getName());
-        renderValidatorHelper( shape, sortedMembers, isInputStructure, "input");
+        renderValidatorHelper( shape, isInputStructure, "input");
         writer.write("return nil");
         writer.closeBlock("}").write("");
     }
 
-    private void renderValidatorHelper (final Shape containerShape, final CodegenUtils.SortedMembers sortedMembers, final boolean isInputStructure, final String dataSource) {
+    private void renderValidatorHelper (final Shape containerShape, final boolean isInputStructure, final String dataSource) {
         containerShape.getAllMembers().values().stream()
                 .filter(memberShape -> !StreamingTrait.isEventStream(model, memberShape))
                 .sorted(sortedMembers)
@@ -62,11 +63,11 @@ public class ValidationGenerator {
                         memberName = dataSource;
                     else 
                         memberName = dataSource + "." + symbolProvider.toMemberName(member);
-                    renderValidatorForEachShape(model.expectShape(member.getTarget()), member, sortedMembers, isInputStructure, memberName);
+                    renderValidatorForEachShape(model.expectShape(member.getTarget()), member, isInputStructure, memberName);
                 });
     }
 
-    private void renderValidatorForEachShape (final Shape currentShape, final MemberShape memberShape, final CodegenUtils.SortedMembers sortedMembers, final boolean isInputStructure, final String dataSource) {
+    private void renderValidatorForEachShape (final Shape currentShape, final MemberShape memberShape, final boolean isInputStructure, final String dataSource) {
                     Symbol symbol = symbolProvider.toSymbol(currentShape);
                     if (isInputStructure) {
                         symbol = symbol.getProperty(SymbolUtils.INPUT_VARIANT, Symbol.class)
@@ -101,7 +102,7 @@ public class ValidationGenerator {
                                     // To avoid declared and not used error for shapes which does not need validation check
                                     _ = item
                                 """.formatted(LIST_ITEM, dataSource));
-                        renderValidatorHelper(currentShape,sortedMembers,isInputStructure, LIST_ITEM);
+                        renderValidatorHelper(currentShape, false, LIST_ITEM);
                         writer.write("""
                                 }
                                 """);
@@ -113,8 +114,8 @@ public class ValidationGenerator {
                                     _ = key
                                     _ = value
                                 """.formatted(MAP_KEY, MAP_VALUE, dataSource));
-                        renderValidatorHelper(currentShape,sortedMembers,isInputStructure, MAP_KEY);
-                        renderValidatorHelper(currentShape,sortedMembers,isInputStructure, MAP_VALUE);
+                        renderValidatorHelper(currentShape, false, MAP_KEY);
+                        renderValidatorHelper(currentShape, false, MAP_VALUE);
                         writer.write("""
                             }
                         """);
@@ -130,7 +131,7 @@ public class ValidationGenerator {
                                         symbolProvider.toMemberName(memberInUnion)
                                         ));
                                     
-                            renderValidatorForEachShape(model.expectShape(memberInUnion.getTarget()), memberInUnion, sortedMembers, isInputStructure, "unionType.Value");
+                            renderValidatorForEachShape(model.expectShape(memberInUnion.getTarget()), memberInUnion, false, "unionType.Value");
                         }
                         writer.write("""
                                 // Default case should not be reached. 
@@ -142,9 +143,7 @@ public class ValidationGenerator {
                                     """);
                     }
                     else {
-                        // This call will help when structure is inside structure. 
-                        // But what about unions?
-                        renderValidatorHelper(currentShape,sortedMembers,isInputStructure, dataSource);
+                        renderValidatorHelper(currentShape, isInputStructure, dataSource);
                     }
     }
 
