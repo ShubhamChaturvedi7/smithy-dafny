@@ -37,13 +37,6 @@ public class DafnyNameResolver {
      * @param symbol The Symbol representing the Shape.
      * @return The Dafny type as a String.
      */
-    /**
-     * Returns the Dafny type for a given Shape.
-     *
-     * @param shape The Shape for which the Dafny type needs to be determined.
-     * @param symbol The Symbol representing the Shape.
-     * @return The Dafny type as a String.
-     */
     public static String getDafnyType(final Shape shape, final Symbol symbol) {
         ShapeType type = shape.getType();
         if (shape.hasTrait(EnumTrait.class)) {
