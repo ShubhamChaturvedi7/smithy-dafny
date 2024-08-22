@@ -82,16 +82,16 @@ public class ValidationGenerator {
                         }
                     }                    
                     if (currentShape.hasTrait(RangeTrait.class)) {
-                        addRangeCheck(symbol, currentShape, dataSource, pointableString);
+                        addRangeCheck(currentShape, dataSource, pointableString);
                     }
                     if (currentShape.hasTrait(LengthTrait.class)) {
-                        addLengthCheck(symbol, currentShape, dataSource, pointableString);
+                        addLengthCheck(currentShape, dataSource, pointableString);
                     }
                     if (currentShape.hasTrait(RequiredTrait.class)) {
                         addRequiredCheck(symbol, currentShape, dataSource);
                     }
                     if (currentShape.hasTrait(DafnyUtf8BytesTrait.class)) {
-                        addUTFCheck(symbol, currentShape, dataSource, pointableString);
+                        addUTFCheck(currentShape, dataSource, pointableString);
                     }
                     // Broke list and map into two different if else because for _, item := range %s looked good for list
                     // And for key, value := range %s looked good for map
@@ -148,7 +148,7 @@ public class ValidationGenerator {
                     }
     }
 
-    private void addRangeCheck(final Symbol memberSymbol, final Shape currentShape, final String dataSource, final String pointableString) {
+    private void addRangeCheck(final Shape currentShape, final String dataSource, final String pointableString) {
         StringBuilder rangeCheck = new StringBuilder();
         RangeTrait rangeTraitShape = currentShape.expectTrait(RangeTrait.class);
         Optional<BigDecimal> min = rangeTraitShape.getMin();
@@ -194,7 +194,7 @@ public class ValidationGenerator {
         writer.write(rangeCheck);
     }
 
-    private void addLengthCheck(final Symbol memberSymbol, final Shape currentShape, final String dataSource, final String pointableString) {
+    private void addLengthCheck(final Shape currentShape, final String dataSource, final String pointableString) {
         StringBuilder lengthCheck = new StringBuilder();
         LengthTrait lengthTraitShape = currentShape.expectTrait(LengthTrait.class);
         Optional<Long> min = lengthTraitShape.getMin();
@@ -285,7 +285,7 @@ public class ValidationGenerator {
         writer.write(RequiredCheck);
     }
 
-    private void addUTFCheck(final Symbol memberSymbol, final Shape currentShape, final String dataSource, final String pointableString) {
+    private void addUTFCheck(final Shape currentShape, final String dataSource, final String pointableString) {
         StringBuilder UTFCheck = new StringBuilder();
         if (pointableString.equals("*")){
             UTFCheck.append("""
