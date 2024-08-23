@@ -132,8 +132,6 @@ public final class StructureGenerator implements Runnable {
 
                 });
         writer.closeBlock("}").write("");
-
-
         validationGenerator.renderValidator(shape, isInputStructure);
     }
 
