@@ -50,6 +50,7 @@ public final class StructureGenerator implements Runnable {
     private final GoWriter writer;
     private final StructureShape shape;
     private final GenerationContext context;
+    private final ValidationGenerator validationGenerator;
 
     public StructureGenerator(
             final GenerationContext context,
@@ -60,6 +61,7 @@ public final class StructureGenerator implements Runnable {
         this.symbolProvider = context.symbolProvider();
         this.writer = writer;
         this.shape = shape;
+        this.validationGenerator = new ValidationGenerator(model, symbolProvider, writer);
     }
 
     @Override
@@ -93,7 +95,6 @@ public final class StructureGenerator implements Runnable {
         writer.addImport("fmt");
         Symbol symbol = symbolProvider.toSymbol(shape);
         writer.openBlock("type $L struct {", symbol.getName());
-        ValidationGenerator validationGenerator = new ValidationGenerator(model, symbolProvider, writer);
         CodegenUtils.SortedMembers sortedMembers = new CodegenUtils.SortedMembers(symbolProvider);
         shape.getAllMembers().values().stream()
                 .filter(memberShape -> !StreamingTrait.isEventStream(model, memberShape))
