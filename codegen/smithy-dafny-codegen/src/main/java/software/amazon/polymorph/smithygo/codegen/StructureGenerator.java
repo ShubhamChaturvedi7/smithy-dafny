@@ -93,7 +93,7 @@ public final class StructureGenerator implements Runnable {
         writer.addImport("fmt");
         Symbol symbol = symbolProvider.toSymbol(shape);
         writer.openBlock("type $L struct {", symbol.getName());
-
+        ValidationGenerator validationGenerator = new ValidationGenerator(model, symbolProvider, writer);
         CodegenUtils.SortedMembers sortedMembers = new CodegenUtils.SortedMembers(symbolProvider);
         shape.getAllMembers().values().stream()
                 .filter(memberShape -> !StreamingTrait.isEventStream(model, memberShape))
@@ -133,8 +133,8 @@ public final class StructureGenerator implements Runnable {
                 });
         writer.closeBlock("}").write("");
 
-        ValidationGenerator validationGenerator = new ValidationGenerator(model, shape, symbolProvider, writer);
-        validationGenerator.renderValidator(isInputStructure);
+
+        validationGenerator.renderValidator(shape, isInputStructure);
     }
 
     /**

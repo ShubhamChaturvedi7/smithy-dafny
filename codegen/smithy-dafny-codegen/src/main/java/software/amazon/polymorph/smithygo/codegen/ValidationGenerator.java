@@ -21,8 +21,6 @@ import static software.amazon.polymorph.smithygo.codegen.SymbolUtils.POINTABLE;
 // Renders constraint validation
 public class ValidationGenerator {
     private final Model model;
-    private final Shape shape;
-    private final Symbol symbol;
     private final SymbolProvider symbolProvider;
     private final GoWriter writer;
     private final CodegenUtils.SortedMembers sortedMembers;
@@ -34,19 +32,17 @@ public class ValidationGenerator {
 
     public ValidationGenerator(
         final Model model,
-        final Shape shape,
         final SymbolProvider symbolProvider,
         final GoWriter writer
     ) {
         this.model = model;
-        this.shape = shape;
-        this.symbol = symbolProvider.toSymbol(shape);
         this.symbolProvider = symbolProvider;
         this.writer = writer;
         this.sortedMembers = new CodegenUtils.SortedMembers(symbolProvider);
     }
 
-    public void renderValidator (final boolean isInputStructure) {
+    public void renderValidator (final Shape shape, final boolean isInputStructure) {
+        Symbol symbol = symbolProvider.toSymbol(shape);
         writer.openBlock("func (input $L) Validate() (error) {", symbol.getName());
         renderValidatorHelper( shape, isInputStructure, "input");
         writer.write("return nil");
